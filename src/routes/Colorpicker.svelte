@@ -2,6 +2,7 @@
     import { sx } from '$lib/classes';
     import { spring } from 'svelte/motion';
     import ColorAxes from './ColorAxes.svelte';
+    import { srgb } from '$lib/color';
 
     export let r = 0;
     export let g = 0;
@@ -23,7 +24,7 @@
 
 <div {style}>
     <!-- row 1 -->
-    <div style={sx({ bg: [$coords.r, $coords.g, $coords.b, $coords.a], w: '100%', h: '100%' })} />
+    <div style={sx({ bg: srgb([$coords.r, $coords.g, $coords.b, $coords.a]), w: '100%', h: '100%' })} />
     <ColorAxes bind:x={g} bind:savedX={saved.g} axes={{ x: true }} />
     <div />
     <!-- row 2 -->

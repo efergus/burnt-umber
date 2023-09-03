@@ -21,6 +21,7 @@
         let verts = centerplane();
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW)
         let vao = gl.createVertexArray();
+        vaos = [...vaos, vao];
         gl.bindVertexArray(vao);
         gl.enableVertexAttribArray(positionLoc);
         let size = 3;
@@ -29,26 +30,25 @@
         let stride = 0;
         let offset = 0;
         gl.vertexAttribPointer(positionLoc, size, type, normalize, stride, offset)
-        vaos = [...vaos, vao];
     }
 
-    // const initializeColor = (gl: WebGL2RenderingContext) => {
-    //     let positionLoc = gl.getAttribLocation(program, "a_color")
-    //     let positionBuf = gl.createBuffer();
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuf);
-    //     let verts = plane();
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW)
-    //     let vao = gl.createVertexArray();
-    //     gl.bindVertexArray(vao);
-    //     gl.enableVertexAttribArray(positionLoc);
-    //     let size = 3;
-    //     let type = gl.FLOAT;
-    //     let normalize = false;
-    //     let stride = 0;
-    //     let offset = 0;
-    //     gl.vertexAttribPointer(positionLoc, size, type, normalize, stride, offset)
-    //     vaos = [...vaos, vao];
-    // }
+    const initializeColor = (gl: WebGL2RenderingContext) => {
+        let positionLoc = gl.getAttribLocation(program, "a_color")
+        let positionBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuf);
+        let verts = plane();
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW)
+        let vao = gl.createVertexArray();
+        vaos = [...vaos, vao];
+        // gl.bindVertexArray(vao);
+        gl.enableVertexAttribArray(positionLoc);
+        let size = 3;
+        let type = gl.FLOAT;
+        let normalize = false;
+        let stride = 0;
+        let offset = 0;
+        gl.vertexAttribPointer(positionLoc, size, type, normalize, stride, offset)
+    }
 
     const initialize = (canvas: HTMLCanvasElement) => {
         const gl = canvas.getContext("webgl2");
@@ -57,7 +57,7 @@
         let frag = createShader(gl, gl.FRAGMENT_SHADER, fragsrc);
         program = createProgram(gl, vert, frag);
         initializePosition(gl);
-        // initializeColor(gl);
+        initializeColor(gl);
     }
 
     const render = () => {
