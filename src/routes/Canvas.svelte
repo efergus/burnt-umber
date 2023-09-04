@@ -3,6 +3,7 @@
     import vertsrc from "$lib/shaders/vert.glsl?raw"
     import fragsrc from "$lib/shaders/frag.glsl?raw"
     import { onMount } from "svelte";
+    // import { new_canvas } from "wasm3d";
     let canvas: HTMLCanvasElement;
     let program: WebGLProgram;
     let vaos: (WebGLVertexArrayObject | null)[] = [];
@@ -83,6 +84,7 @@
     onMount(()=>{
         initialize(canvas);
         render();
+        // console.log(new_canvas(canvas));
     });
     // render();
 </script>
