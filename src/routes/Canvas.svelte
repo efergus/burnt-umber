@@ -3,6 +3,7 @@
     import vertsrc from "$lib/shaders/vert.glsl?raw"
     import fragsrc from "$lib/shaders/frag.glsl?raw"
     import { onMount } from "svelte";
+    // import { new_canvas } from "$lib/rust/pkg/rust";
     // import { new_canvas } from "wasm3d";
     let canvas: HTMLCanvasElement;
     let program: WebGLProgram;
@@ -81,12 +82,16 @@
         }
     }
 
-    onMount(()=>{
-        initialize(canvas);
-        render();
-        // console.log(new_canvas(canvas));
+    onMount(async ()=>{
+        // initialize(canvas);
+        // render();
+        import("$lib/rust/pkg/rust.js")
+            .then(async ({default: init, new_canvas})=>{
+                await init();
+                const rect = canvas.getBoundingClientRect();
+                new_canvas(canvas, rect.width, rect.height);
+            });
     });
-    // render();
 </script>
 
 <canvas class="h-full w-full" bind:this={canvas} bind:clientWidth={canvas.width}/>
