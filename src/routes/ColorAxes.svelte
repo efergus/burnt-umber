@@ -1,7 +1,6 @@
 <script lang="ts">
     import { sx } from '$lib/classes';
     import { clamp } from '$lib/math';
-    import { onMount } from 'svelte';
     import Canvas from './Canvas.svelte';
     import Cursor from './Cursor.svelte';
     export let x = 0;

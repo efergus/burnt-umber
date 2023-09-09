@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "npm run build && vite dev",
         "build": "npm run wasm && vite build",
-        "wasm": "wasm-pack build --target web src/lib/rust",
+        "wasm": "wasm-pack build rust --dev --target web --out-dir ../src/lib/rust",
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
