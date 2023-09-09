@@ -5,6 +5,9 @@
     import { onMount } from "svelte";
     import init, { new_canvas } from "$lib/rust";
     // import { new_canvas } from "wasm3d";
+    export let r = 0;
+    export let g = 0;
+    export let b = 0;
     let canvas: HTMLCanvasElement;
     let program: WebGLProgram;
     let vaos: (WebGLVertexArrayObject | null)[] = [];
@@ -82,13 +85,36 @@
         }
     }
 
+    const pick = (e: MouseEvent) => {
+        console.log("PICK")
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return;
+        console.log("PICK2")
+        const box = canvas.getBoundingClientRect();
+        const x = e.clientX - box.left;
+        const y = e.clientY - box.top;
+        const pixel = ctx.getImageData(x, y, 1, 1);
+        const data = pixel.data;
+        r = data[0];
+        g = data[1];
+        b = data[2];
+    }
+
     onMount(async ()=>{
         // initialize(canvas);
         // render();
         await init();
         const rect = canvas.getBoundingClientRect();
-        new_canvas(canvas, rect.width, rect.height);
+        new_canvas(canvas, rect.width, rect.height, (x: number, y: number, z: number)=>{
+            console.log(x, y, z);
+            r = x;
+            g = y;
+            b = z;
+        });
+        // canvas.addEventListener("mousemove", pick);
     });
 </script>
 
+<!-- <div on:mousemove={pick}> -->
 <canvas class="h-full w-full" bind:this={canvas} bind:clientWidth={canvas.width}/>
+<!-- </div> -->

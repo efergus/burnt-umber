@@ -1,4 +1,6 @@
 
+#define PI 3.141592653
+
 in vec3 pos;
 // in vec4 color;
 
@@ -12,9 +14,8 @@ void main(){
     int m = 128;
     vec2 z = vec2(0);
     for(int i = 0; i < m; i++) {
-        z = fun(z, vec2(length(pos.xy), atan(pos.x, pos.y)/2.0));
+        z = fun(z, vec2(length(pos.xy), atan(pos.x, pos.y)/PI));
         if(length(z) >= 2.0) {
-        // if (true) {
             float t = float(i);
             color = vec4(smoothstep(0.0, 16.0, t) - smoothstep(32.0, float(m), t),
                 1.0 - smoothstep(16.0, 32.0, t),

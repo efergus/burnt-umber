@@ -779,6 +779,7 @@ name = "rust"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
+ "js-sys",
  "three-d",
  "wasm-bindgen",
  "web-sys",
