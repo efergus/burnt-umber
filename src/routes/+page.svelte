@@ -1,5 +1,6 @@
 <script lang="ts">
     import { sx } from '$lib/classes';
+    import { spring } from 'svelte/motion';
     import '../app.css';
     import Canvas from './Canvas.svelte';
     // import Big from './Big.svelte';
@@ -12,9 +13,11 @@
     let r = 0;
     let g = 0;
     let b = 0;
+    let color = spring([0.0, 0.0, 0.0])
     let style: string;
+    $: $color = [r, g, b]
     $: {
-        style = sx({bg: [r/255, g/255, b/255]});
+        style = sx({bg: $color});
         console.log(style);
     }
 </script>
