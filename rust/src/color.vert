@@ -1,10 +1,13 @@
 in vec3 position;
 uniform mat4 model;
+uniform mat4 meta;
 uniform mat4 view;
 out vec3 pos;
 
 void main() {
-    vec4 model_pos = model * vec4(position, 1.0);
-    gl_Position = view * model_pos;
-    pos = model_pos.xyz;
+    vec4 p = vec4(position, 1.0);
+    vec4 model_pos = model * p;
+    gl_Position = view * model * p;
+    vec4 meta_pos = meta * p;
+    pos = meta_pos.xyz;
 }
