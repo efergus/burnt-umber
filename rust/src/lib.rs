@@ -28,6 +28,7 @@ extern "C" {
 
 struct Model {
     positions: VertexBuffer,
+    embed: Option<VertexBuffer>,
     transform: Mat4,
 }
 
@@ -223,15 +224,17 @@ impl ColorView {
         (
             Model {
                 positions: cube,
+                embed: None,
                 transform: Mat4::from_scale(0.5) * Mat4::from_translation(Vec3::new(1.0, 1.0, 1.0)),
             },
             Model {
                 positions: cylinder,
-                transform: Mat4::from_translation(Vector3::new(0.0, 1.0, 0.0))
-                    * Mat4::from_angle_z(degrees(-90.0)),
+                embed: None,
+                transform: Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
             },
             Model {
                 positions: quad,
+                embed: None,
                 transform: Mat4::identity(),
             },
         )
@@ -267,9 +270,7 @@ impl ColorView {
             let screen = input.screen();
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let view = self.camera.projection() * self.camera.view();
-            self.cylinder.transform = Mat4::from_nonuniform_scale(1.0, self.chunk.y, 1.0)
-                * Mat4::from_translation(Vector3::new(0.0, 1.0, 0.0))
-                * Mat4::from_angle_z(degrees(-90.0));
+            self.cylinder.transform = Mat4::from_nonuniform_scale(1.0, self.chunk.y, 1.0);
             self.color_scene.render(&screen, &self.cylinder, view);
             // let quad_meta = Mat4::from_angle_y(radians(input.accumulated_time as f32 * 0.001))
             let quad_meta = Mat4::from_translation(vec3(self.hover.x, 0.0, self.hover.z))
