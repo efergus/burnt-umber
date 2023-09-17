@@ -51,6 +51,5 @@ vec3 srgb_from_linear_srgb(vec3 rgb) {
 }
 
 void main(){
-    // color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);
     // REPLACE
 }

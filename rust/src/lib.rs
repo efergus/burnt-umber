@@ -3,13 +3,14 @@ extern crate wasm_bindgen;
 extern crate web_sys;
 use winit::window::WindowBuilder;
 mod geometry;
-use geometry::{cylinder_mesh, quad_mesh};
+use geometry::{cylinder_mesh, quad_mesh, tube_mesh};
 
 use three_d::{
     renderer::{control::Event, render_states::*, *},
     FrameOutput, SurfaceSettings, Window,
 };
 use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 // use
 
@@ -44,6 +45,25 @@ trait Renders {
     fn render(&self, target: &RenderTarget, model: &Model, view: Mat4) {
         self.render_with_meta(target, model, view, model.transform, 5.0)
     }
+    fn render_embed(
+        &self,
+        target: &RenderTarget,
+        model: &Model,
+        view: Mat4,
+        meta: Mat4,
+        tag: f32,
+    ) {
+        self.render_buffer(
+            &self.default_program(),
+            target,
+            model.embed.as_ref().unwrap(),
+            model.embed.as_ref().unwrap(),
+            view,
+            meta,
+            meta,
+            tag,
+        )
+    }
     fn render_with_meta(
         &self,
         target: &RenderTarget,
@@ -52,18 +72,39 @@ trait Renders {
         meta: Mat4,
         tag: f32,
     ) {
+        self.render_buffer(
+            &self.default_program(),
+            target,
+            &model.positions,
+            (&model.embed.as_ref()).unwrap_or(&model.positions),
+            view,
+            model.transform,
+            meta,
+            tag,
+        )
+    }
+    fn render_buffer(
+        &self,
+        program: &Program,
+        target: &RenderTarget,
+        positions: &VertexBuffer,
+        embed: &VertexBuffer,
+        view: Mat4,
+        model: Mat4,
+        meta: Mat4,
+        tag: f32,
+    ) {
         target.write(move || {
-            let program = &self.default_program();
-            program.use_uniform("model", model.transform);
+            program.use_uniform("model", model);
             program.use_uniform_if_required("meta", meta);
             program.use_uniform("view", view);
             program.use_uniform_if_required("tag", tag);
-            program.use_vertex_attribute("position", &model.positions);
-            program.use_vertex_attribute("embed", &model.positions);
+            program.use_vertex_attribute("position", positions);
+            program.use_vertex_attribute("embed", embed);
             program.draw_arrays(
                 self.render_states(),
                 target.viewport(),
-                model.positions.vertex_count(),
+                positions.vertex_count(),
             );
         });
     }
@@ -115,6 +156,7 @@ pub struct ColorView {
     cube: Model,
     cylinder: Model,
     quad: Model,
+    tube: Model,
     on_select: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
     // on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
 }
@@ -183,10 +225,11 @@ impl ColorView {
         let control = OrbitControl::new(*camera.target(), 1.0, 100.0);
 
         let hsv_shader = color_shader("color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+        // let hsv_shader = color_shader("color = vec4(pos.xyz, 1.0);");
         let color_scene = Scene::new(&context, &hsv_shader);
         let pos_shader = color_shader("color = vec4(pos.xyz, tag);");
         let pos_scene = Scene::new(&context, &pos_shader);
-        let (cube, cylinder, quad) = ColorView::initialize_models(&context);
+        let (cube, cylinder, quad, tube) = ColorView::initialize_models(&context);
         // let tags = vec![
         //     Box::new(|view: &mut Self, color: Vec3| {
 
@@ -213,14 +256,34 @@ impl ColorView {
             cube,
             cylinder,
             quad,
+            tube,
         };
         view
     }
 
-    fn initialize_models(context: &Context) -> (Model, Model, Model) {
+    fn initialize_models(context: &Context) -> (Model, Model, Model, Model) {
         let cube = VertexBuffer::new_with_data(&context, &CpuMesh::cube().positions.to_f32());
         let cylinder = VertexBuffer::new_with_data(&context, &cylinder_mesh(64));
         let quad = VertexBuffer::new_with_data(&context, &quad_mesh());
+        let tube = tube_mesh(64);
+        let tube_wrap: Vec<Vec3> = tube.iter().map(|pos| {
+            let flat = vec2(pos.x, pos.z);
+            let mut angle = - flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
+            if angle < 0.0 {
+                angle += 0.5;
+            }
+            // let radius = flat.magnitude2().sqrt();
+            vec3(angle, pos.y, 0.0)
+        }).collect();
+        for i in 0..18 {
+            log(&format!("{:?}", tube_wrap[i]));
+        }
+        log("STEP");
+        for i in (0..(64*6)).step_by(8) {
+            log(&format!("{:?}", tube_wrap[i]));
+        }
+        let tube = VertexBuffer::new_with_data(&context, &tube);
+        let tube_wrap = VertexBuffer::new_with_data(&context, &tube_wrap);
         (
             Model {
                 positions: cube,
@@ -237,6 +300,11 @@ impl ColorView {
                 embed: None,
                 transform: Mat4::identity(),
             },
+            Model {
+                positions: tube_wrap,
+                embed: Some(tube),
+                transform: Mat4::identity(),
+            }
         )
     }
 
@@ -275,7 +343,7 @@ impl ColorView {
             // let quad_meta = Mat4::from_angle_y(radians(input.accumulated_time as f32 * 0.001))
             let quad_meta = Mat4::from_translation(vec3(self.hover.x, 0.0, self.hover.z))
                 * Mat4::from_nonuniform_scale(0.0, 1.0, 1.0);
-            let quad_view = Mat4::from_translation(vec3(-1.0, 0.0, 0.0))
+            let quad_view = Mat4::from_translation(vec3(-1.0, -0.5, 0.0))
                 * Mat4::from_nonuniform_scale(0.2, 1.0, 1.0);
             self.color_scene
                 .render_with_meta(&screen, &self.quad, quad_view, quad_meta, 7.0);
@@ -283,6 +351,14 @@ impl ColorView {
             let sample_view = Mat4::from_translation(vec3(0.5, 0.5, 0.0));
             self.color_scene
                 .render_with_meta(&screen, &self.quad, sample_view, sample_meta, 0.0);
+            let tube_meta = Mat4::from_translation(vec3(0.0, self.hover.y, 0.0))
+                * Mat4::from_nonuniform_scale(1.0, 0.3, 1.0);
+            let tube_view = Mat4::from_translation(vec3(-0.5, 0.8, 0.0))
+                * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0);
+            self.color_scene
+                .render_with_meta(&screen, &self.tube, tube_view, tube_meta, 7.0);
+            self.color_scene
+                .render_embed(&screen, &self.tube, view, tube_meta, 7.0);
             let position = self.position;
             let mut texture = Texture2D::new_empty::<[f32; 4]>(
                 &context,

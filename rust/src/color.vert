@@ -11,4 +11,5 @@ void main() {
     gl_Position = view * model * p;
     vec4 meta_pos = meta * vec4(embed, 1.0);
     pos = meta_pos.xyz;
+    // pos = model_pos.xyz;
 }
