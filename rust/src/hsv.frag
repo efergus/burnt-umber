@@ -35,7 +35,7 @@ vec3 srgb_from_linear_srgb(vec3 rgb) {
 }
 
 void main(){
-    vec3 colorpos = pos;
+    vec3 colorpos = pos.xyz;
     // colorpos.y = min(colorpos.y, 0.5);
     float v = colorpos.y;
     float s = clamp(length(colorpos.xz), 0.0, 1.0);

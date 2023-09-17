@@ -1,6 +1,8 @@
 extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
+mod geometry;
+use geometry::{cylinder_mesh, quad_mesh};
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use three_d::{
@@ -20,97 +22,6 @@ extern "C" {
     fn log(s: &str);
 }
 
-fn polar_cylinder(subdivisions: i32) -> (Vec<Vector3<f32>>, Vec<Srgba>) {
-    let mut positions: Vec<Vector3<f32>> = Vec::new();
-    let mut colors: Vec<Srgba> = Vec::new();
-    let top = Vec3::new(1.0, 0.0, 0.0);
-    let bottom = Vec3::new(0.0, 0.0, 0.0);
-    for i in 0..subdivisions {
-        let left_turn = i as f32 / subdivisions as f32;
-        let angle = degrees(left_turn * 360.0);
-        let left_bottom = Vec3::new(0.0, angle.cos(), angle.sin());
-        let left_top = Vec3::new(1.0, angle.cos(), angle.sin());
-        let right_turn = (i + 1) as f32 / subdivisions as f32;
-        let angle = degrees(right_turn * 360.0);
-        let right_bottom = Vec3::new(0.0, angle.cos(), angle.sin());
-        let right_top = Vec3::new(1.0, angle.cos(), angle.sin());
-        let left_turn = (left_turn * 255.0) as u8;
-        let right_turn = (right_turn * 255.0) as u8;
-        positions.push(top);
-        colors.push(Srgba::new_opaque(left_turn, 255, 0));
-        positions.push(left_top);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(right_top);
-        colors.push(Srgba::new_opaque(right_turn, 0, 255));
-
-        positions.push(left_top);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(left_bottom);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(right_bottom);
-        colors.push(Srgba::new_opaque(right_turn, 0, 255));
-
-        positions.push(left_top);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(right_bottom);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(right_top);
-        colors.push(Srgba::new_opaque(right_turn, 0, 255));
-
-        positions.push(bottom);
-        colors.push(Srgba::new_opaque(right_turn, 0, 0));
-        positions.push(right_bottom);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(left_bottom);
-        colors.push(Srgba::new_opaque(right_turn, 0, 255));
-    }
-    (positions, colors)
-}
-
-fn polar_cone(subdivisions: i32) -> (Vec<Vector3<f32>>, Vec<Srgba>) {
-    let mut positions: Vec<Vector3<f32>> = Vec::new();
-    let mut colors: Vec<Srgba> = Vec::new();
-    let top = Vec3::new(1.0, 0.0, 0.0);
-    let bottom = Vec3::new(0.0, 0.0, 0.0);
-    for i in 0..subdivisions {
-        let left_turn = i as f32 / subdivisions as f32;
-        let angle = degrees(left_turn * 360.0);
-        let left = Vec3::new(0.0, angle.cos(), angle.sin());
-        let right_turn = (i + 1) as f32 / subdivisions as f32;
-        let angle = degrees(right_turn * 360.0);
-        let right = Vec3::new(0.0, angle.cos(), angle.sin());
-        let left_turn = (left_turn * 255.0) as u8;
-        let right_turn = (right_turn * 255.0) as u8;
-        positions.push(top);
-        colors.push(Srgba::new_opaque(left_turn, 255, 0));
-        positions.push(left);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(right);
-        colors.push(Srgba::new_opaque(right_turn, 0, 255));
-        positions.push(left);
-        colors.push(Srgba::new_opaque(left_turn, 0, 255));
-        positions.push(bottom);
-        colors.push(Srgba::new_opaque(right_turn, 0, 0));
-        positions.push(right);
-        colors.push(Srgba::new_opaque(right_turn, 0, 255));
-    }
-    (positions, colors)
-}
-
-fn quad_mesh() -> Vec<Vec3> {
-    return vec![
-        vec3(0.0, 0.0, 0.0),
-        vec3(1.0, 1.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        vec3(0.0, 0.0, 0.0),
-        vec3(1.0, 0.0, 0.0),
-        vec3(1.0, 1.0, 0.0),
-    ];
-}
-
-// fn sphere(subdivisions: u32) -> Vec<Vec3> {
-
-// }
 // struct Uniform<T: UniformDataType> {
 //     name: String,
 //     value: T,
@@ -131,14 +42,15 @@ trait Renders {
         RenderStates::default()
     }
     fn render(&self, target: &RenderTarget, model: &Model, view: Mat4) {
-        self.render_with_meta(target, model, view, model.transform)
+        self.render_with_meta(target, model, view, model.transform, 5.0)
     }
-    fn render_with_meta(&self, target: &RenderTarget, model: &Model, view: Mat4, meta: Mat4) {
+    fn render_with_meta(&self, target: &RenderTarget, model: &Model, view: Mat4, meta: Mat4, tag: f32) {
         target.write(move || {
             let program = &self.default_program();
             program.use_uniform("model", model.transform);
             program.use_uniform_if_required("meta", meta);
             program.use_uniform("view", view);
+            program.use_uniform_if_required("tag", tag);
             program.use_vertex_attribute("position", &model.positions);
             program.draw_arrays(
                 self.render_states(),
@@ -188,6 +100,10 @@ pub struct ColorView {
     height: u32,
     control: OrbitControl,
     selection: Vec3,
+    hover: Vec3,
+    chunk: Vec3,
+    position: Vec2,
+    // tags: Vec<Box<dyn FnMut(&mut ColorView, Vec3)->()>,
     camera: Camera,
     color_scene: Scene,
     pos_scene: Scene,
@@ -196,6 +112,20 @@ pub struct ColorView {
     quad: Model,
     on_select: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
     on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
+}
+
+fn set_with_tag(source: Vec3, new: Vec3, tag: u8) -> Vec3 {
+    let mut dest = source;
+    if (tag & 1) != 0 {
+        dest.x = new.x;
+    }
+    if (tag & 2) != 0 {
+        dest.y = new.y;
+    }
+    if (tag & 4) != 0 {
+        dest.z = new.z;
+    }
+    dest
 }
 
 #[wasm_bindgen]
@@ -242,6 +172,11 @@ impl ColorView {
                 let color_scene = Scene::new(&context, include_str!("hsv.frag"));
                 let pos_scene = Scene::new(&context, include_str!("pos.frag"));
                 let (cube, cylinder, quad) = ColorView::initialize_models(&context);
+                // let tags = vec![
+                //     Box::new(|view: &mut Self, color: Vec3| {
+
+                //     })
+                // ];
                 let view = ColorView {
                     window,
                     // winit_window,
@@ -250,7 +185,11 @@ impl ColorView {
                     width,
                     height,
                     control,
-                    selection: vec3(0.0, 0.0, 0.0),
+                    selection: vec3(0.0, 0.0, 1.0),
+                    hover: vec3(0.0, 0.0, 1.0),
+                    chunk: vec3(1.0, 1.0, 1.0),
+                    position: vec2(0.0, 0.0),
+                    // tags,
                     on_select: None,
                     on_hover: None,
                     camera,
@@ -268,8 +207,7 @@ impl ColorView {
 
     fn initialize_models(context: &Context) -> (Model, Model, Model) {
         let cube = VertexBuffer::new_with_data(&context, &CpuMesh::cube().positions.to_f32());
-        let (positions, colors) = polar_cylinder(64);
-        let cylinder = VertexBuffer::new_with_data(&context, &positions);
+        let cylinder = VertexBuffer::new_with_data(&context, &cylinder_mesh(64));
         let quad = VertexBuffer::new_with_data(&context, &quad_mesh());
         (
             Model {
@@ -296,13 +234,15 @@ impl ColorView {
         // let event_loop = Rc::new(RefCell::new(self.event_loop));
 
         self.window.render_loop(move |mut input| {
-            let mut position: Option<Vector2<f32>> = None;
+            let mut press = false;
             for event in input.events.iter() {
                 match event {
                     Event::MouseMotion { position: pos, .. } => {
-                        position = Some(Vec2::new(pos.x, pos.y));
-                        self.selection.x = pos.x;
-                        self.selection.y = pos.y;
+                        self.position = Vec2::new(pos.x, pos.y);
+                    }
+                    Event::MousePress { button, position: pos, .. } => {
+                        self.position = Vec2::new(pos.x, pos.y);
+                        press = *button == MouseButton::Left;
                     }
                     _ => {}
                 }
@@ -310,7 +250,11 @@ impl ColorView {
             self.control
                 .handle_events(&mut self.camera, &mut input.events);
             let screen = input.screen();
+            screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let view = self.camera.projection() * self.camera.view();
+            self.cylinder.transform = Mat4::from_nonuniform_scale(1.0, self.chunk.y, 1.0)
+                * Mat4::from_translation(Vector3::new(0.0, 1.0, 0.0))
+                * Mat4::from_angle_z(degrees(-90.0));
             self.color_scene.render(&screen, &self.cylinder, view);
             let quad_meta = Mat4::from_angle_y(radians(input.accumulated_time as f32 * 0.001))
                 * Mat4::from_translation(vec3(1.0, 0.0, 0.0))
@@ -318,46 +262,58 @@ impl ColorView {
             let quad_view = Mat4::from_translation(vec3(-1.0, 0.0, 0.0))
                 * Mat4::from_nonuniform_scale(0.2, 1.0, 1.0);
             self.color_scene
-                .render_with_meta(&screen, &self.quad, quad_view, quad_meta);
-            if let Some(position) = position {
-                let mut texture = Texture2D::new_empty::<[f32; 4]>(
-                    &context,
-                    self.width,
-                    self.height,
-                    Interpolation::Nearest,
-                    Interpolation::Nearest,
-                    None,
-                    Wrapping::ClampToEdge,
-                    Wrapping::ClampToEdge,
-                );
-                let mut depth_texture = DepthTexture2D::new::<f32>(
-                    &context,
-                    self.width,
-                    self.height,
-                    Wrapping::ClampToEdge,
-                    Wrapping::ClampToEdge,
-                );
-                let pos_target = RenderTarget::new(
-                    texture.as_color_target(None),
-                    depth_texture.as_depth_target(),
-                );
-                pos_target.clear(ClearState::depth(1.0));
-                self.pos_scene.render(&pos_target, &self.cylinder, view);
-                self.pos_scene
-                    .render_with_meta(&pos_target, &self.quad, quad_view, quad_meta);
-                // self.pos_scene.render(&screen, &self.cylinder, view);
-                // self.pos_scene.render(&screen, &self.quad, quad_view);
-                let scissor_box = ScissorBox {
-                    x: position.x as i32,
-                    y: (self.height as i32) - (position.y as i32),
-                    width: 1,
-                    height: 1,
-                };
-                let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
-                self.selection = vec3(pos[0], pos[1], pos[2]);
-                // log(&format!("{}, {}, {:?} {:?}", self.width, self.height, position, pos));
+                .render_with_meta(&screen, &self.quad, quad_view, quad_meta, 7.0);
+            let sample_meta = Mat4::from_translation(self.hover) * Mat4::from_scale(0.0);
+            let sample_view = Mat4::from_translation(vec3(0.5, 0.5, 0.0));
+            self.color_scene.render_with_meta(&screen, &self.quad, sample_view, sample_meta, 0.0);
+            let position = self.position;
+            let mut texture = Texture2D::new_empty::<[f32; 4]>(
+                &context,
+                self.width,
+                self.height,
+                Interpolation::Nearest,
+                Interpolation::Nearest,
+                None,
+                Wrapping::ClampToEdge,
+                Wrapping::ClampToEdge,
+            );
+            let mut depth_texture = DepthTexture2D::new::<f32>(
+                &context,
+                self.width,
+                self.height,
+                Wrapping::ClampToEdge,
+                Wrapping::ClampToEdge,
+            );
+            let pos_target = RenderTarget::new(
+                texture.as_color_target(None),
+                depth_texture.as_depth_target(),
+            );
+            pos_target.clear(ClearState::depth(1.0));
+            self.pos_scene.render(&pos_target, &self.cylinder, view);
+            self.pos_scene
+                .render_with_meta(&pos_target, &self.quad, quad_view, quad_meta, 7.0);
+            // self.pos_scene.render(&screen, &self.cylinder, view);
+            // self.pos_scene.render(&screen, &self.quad, quad_view);
+            let scissor_box = ScissorBox {
+                x: position.x as i32,
+                y: (self.height as i32) - (position.y as i32),
+                width: 1,
+                height: 1,
+            };
+            let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
+            let select = pos[3] as u8;
+            let pos = vec3(pos[0], pos[1], pos[2]);
+            if select != 0 {
+                if press {
+                    self.selection = pos;
+                }
+                self.hover = pos;
             }
-            self.cube.transform = Mat4::from_translation(self.selection) * Mat4::from_scale(0.05);
+            else {
+                self.hover = self.selection;
+            }
+            self.chunk = set_with_tag(self.chunk, pos, select);
+            self.cube.transform = Mat4::from_translation(self.hover) * Mat4::from_scale(0.05);
             self.color_scene.render(&screen, &self.cube, view);
             FrameOutput::default()
         });
