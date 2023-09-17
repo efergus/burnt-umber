@@ -3,15 +3,13 @@ extern crate wasm_bindgen;
 extern crate web_sys;
 mod geometry;
 use geometry::{cylinder_mesh, quad_mesh};
-use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use three_d::{
     renderer::{control::Event, render_states::*, *},
-    FrameInput, FrameInputGenerator, FrameOutput, SurfaceSettings, Window, WindowedContext,
+    FrameOutput, SurfaceSettings, Window,
 };
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
-use winit::event_loop::EventLoop;
 // use
 
 #[wasm_bindgen]
@@ -52,6 +50,7 @@ trait Renders {
             program.use_uniform("view", view);
             program.use_uniform_if_required("tag", tag);
             program.use_vertex_attribute("position", &model.positions);
+            // program.use_vertex_attribute("embed", &model.positions);
             program.draw_arrays(
                 self.render_states(),
                 target.viewport(),
@@ -70,7 +69,7 @@ impl Scene {
         let program = Program::from_source(
             context,
             include_str!("color.vert"),
-            fragment_shader_source, // include_str!("hsv.frag"),
+            fragment_shader_source,
         )
         .unwrap();
         Scene { program }
@@ -176,7 +175,8 @@ impl ColorView {
 
                 let hsv_shader = color_shader("color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
                 let color_scene = Scene::new(&context, &hsv_shader);
-                let pos_scene = Scene::new(&context, include_str!("pos.frag"));
+                let pos_shader = color_shader("color = vec4(pos.xyz, tag);");
+                let pos_scene = Scene::new(&context, &pos_shader);
                 let (cube, cylinder, quad) = ColorView::initialize_models(&context);
                 // let tags = vec![
                 //     Box::new(|view: &mut Self, color: Vec3| {

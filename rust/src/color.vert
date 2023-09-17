@@ -1,4 +1,5 @@
 in vec3 position;
+in vec3 embed;
 uniform mat4 model;
 uniform mat4 meta;
 uniform mat4 view;
