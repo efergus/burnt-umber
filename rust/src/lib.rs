@@ -114,6 +114,11 @@ pub struct ColorView {
     on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
 }
 
+fn color_shader(string: &str) -> String {
+    include_str!("color.frag")
+                    .replace("// REPLACE", string)
+}
+
 fn set_with_tag(source: Vec3, new: Vec3, tag: u8) -> Vec3 {
     let mut dest = source;
     if (tag & 1) != 0 {
@@ -169,7 +174,8 @@ impl ColorView {
                 );
                 let control = OrbitControl::new(*camera.target(), 1.0, 100.0);
 
-                let color_scene = Scene::new(&context, include_str!("hsv.frag"));
+                let hsv_shader = color_shader("color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+                let color_scene = Scene::new(&context, &hsv_shader);
                 let pos_scene = Scene::new(&context, include_str!("pos.frag"));
                 let (cube, cylinder, quad) = ColorView::initialize_models(&context);
                 // let tags = vec![
@@ -256,8 +262,8 @@ impl ColorView {
                 * Mat4::from_translation(Vector3::new(0.0, 1.0, 0.0))
                 * Mat4::from_angle_z(degrees(-90.0));
             self.color_scene.render(&screen, &self.cylinder, view);
-            let quad_meta = Mat4::from_angle_y(radians(input.accumulated_time as f32 * 0.001))
-                * Mat4::from_translation(vec3(1.0, 0.0, 0.0))
+            // let quad_meta = Mat4::from_angle_y(radians(input.accumulated_time as f32 * 0.001))
+            let quad_meta = Mat4::from_translation(vec3(self.hover.x, 0.0, self.hover.z))
                 * Mat4::from_nonuniform_scale(0.0, 1.0, 1.0);
             let quad_view = Mat4::from_translation(vec3(-1.0, 0.0, 0.0))
                 * Mat4::from_nonuniform_scale(0.2, 1.0, 1.0);

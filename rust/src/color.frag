@@ -5,6 +5,14 @@ in vec3 pos;
 
 layout (location = 0) out vec4 color;
 
+vec3 xyz2hsv(vec3 pos)
+{
+    float v = pos.y;
+    float s = clamp(length(pos.xz), 0.0, 1.0);
+    float h = clamp((atan(pos.x, pos.z)/PI + 1.0)/2.0, 0.0, 1.0);
+    return vec3(h, s, v);
+}
+
 vec3 rgb2hsv(vec3 c)
 {
     vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -35,12 +43,6 @@ vec3 srgb_from_linear_srgb(vec3 rgb) {
 }
 
 void main(){
-    vec3 colorpos = pos.xyz;
-    // colorpos.y = min(colorpos.y, 0.5);
-    float v = colorpos.y;
-    float s = clamp(length(colorpos.xz), 0.0, 1.0);
-    float h = clamp((atan(colorpos.x, colorpos.z)/PI + 1.0)/2.0, 0.0, 1.0);
-    vec3 rgb = hsv2rgb(vec3(h, s, v));
-    // rgb = srgb_from_linear_srgb(rgb);
-    color = vec4(rgb, 1.0f);
+    // color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);
+    // REPLACE
 }

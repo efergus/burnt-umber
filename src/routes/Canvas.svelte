@@ -104,5 +104,5 @@
 </script>
 
 <!-- <div on:mousemove={pick}> -->
-<canvas class="h-full w-full" bind:this={canvas} bind:clientWidth={canvas.width}/>
+<canvas class="h-full w-full" bind:this={canvas}/>
 <!-- </div> -->
