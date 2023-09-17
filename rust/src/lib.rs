@@ -1,6 +1,7 @@
 extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
+use winit::window::WindowBuilder;
 mod geometry;
 use geometry::{cylinder_mesh, quad_mesh};
 
@@ -42,7 +43,14 @@ trait Renders {
     fn render(&self, target: &RenderTarget, model: &Model, view: Mat4) {
         self.render_with_meta(target, model, view, model.transform, 5.0)
     }
-    fn render_with_meta(&self, target: &RenderTarget, model: &Model, view: Mat4, meta: Mat4, tag: f32) {
+    fn render_with_meta(
+        &self,
+        target: &RenderTarget,
+        model: &Model,
+        view: Mat4,
+        meta: Mat4,
+        tag: f32,
+    ) {
         target.write(move || {
             let program = &self.default_program();
             program.use_uniform("model", model.transform);
@@ -50,7 +58,7 @@ trait Renders {
             program.use_uniform("view", view);
             program.use_uniform_if_required("tag", tag);
             program.use_vertex_attribute("position", &model.positions);
-            // program.use_vertex_attribute("embed", &model.positions);
+            program.use_vertex_attribute("embed", &model.positions);
             program.draw_arrays(
                 self.render_states(),
                 target.viewport(),
@@ -66,12 +74,9 @@ struct Scene {
 
 impl Scene {
     fn new(context: &Context, fragment_shader_source: &str) -> Self {
-        let program = Program::from_source(
-            context,
-            include_str!("color.vert"),
-            fragment_shader_source,
-        )
-        .unwrap();
+        let program =
+            Program::from_source(context, include_str!("color.vert"), fragment_shader_source)
+                .unwrap();
         Scene { program }
     }
 }
@@ -110,12 +115,11 @@ pub struct ColorView {
     cylinder: Model,
     quad: Model,
     on_select: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
-    on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
+    // on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
 }
 
 fn color_shader(string: &str) -> String {
-    include_str!("color.frag")
-                    .replace("// REPLACE", string)
+    include_str!("color.frag").replace("// REPLACE", string)
 }
 
 fn set_with_tag(source: Vec3, new: Vec3, tag: u8) -> Vec3 {
@@ -134,81 +138,82 @@ fn set_with_tag(source: Vec3, new: Vec3, tag: u8) -> Vec3 {
 
 #[wasm_bindgen]
 impl ColorView {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn new(width: u32, height: u32) -> Self {
+        let window_builder = winit::window::WindowBuilder::new()
+            .with_title("winit window")
+            .with_min_inner_size(winit::dpi::LogicalSize::new(width, height))
+            .with_maximized(true);
+        ColorView::build(window_builder, width, height)
+    }
+
+    #[cfg(target_arch = "wasm32")]
     pub fn new(canvas: HtmlCanvasElement, width: u32, height: u32) -> Self {
-        match canvas.dyn_into::<HtmlCanvasElement>() {
+        let window_builder = match canvas.dyn_into::<HtmlCanvasElement>() {
             Ok(canvas) => {
-                #[cfg(not(target_arch = "wasm32"))]
-                let window_builder = winit::window::WindowBuilder::new()
-                    .with_title("winit window")
-                    .with_min_inner_size(winit::dpi::LogicalSize::new(1280, 720))
-                    .with_maximized(true);
-                #[cfg(target_arch = "wasm32")]
-                let window_builder = {
-                    use winit::platform::web::WindowBuilderExtWebSys;
-                    winit::window::WindowBuilder::new()
-                        .with_canvas(Some(canvas))
-                        .with_inner_size(winit::dpi::LogicalSize::new(width, height))
-                };
-
-                let event_loop = winit::event_loop::EventLoop::new();
-                let winit_window = window_builder.build(&event_loop).unwrap();
-                let window = Window::from_winit_window(
-                    winit_window,
-                    event_loop,
-                    SurfaceSettings::default(),
-                    false,
-                )
-                .unwrap();
-                let context = window.gl();
-                // let context = WindowedContext::from_winit_window(&winit_window, SurfaceSettings::default()).unwrap();
-
-                let camera = Camera::new_perspective(
-                    Viewport::new_at_origo(1, 1),
-                    vec3(0.0, 2.0, 4.0),
-                    vec3(0.0, 0.5, 0.0),
-                    vec3(0.0, 1.0, 0.0),
-                    degrees(45.0),
-                    0.1,
-                    10.0,
-                );
-                let control = OrbitControl::new(*camera.target(), 1.0, 100.0);
-
-                let hsv_shader = color_shader("color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
-                let color_scene = Scene::new(&context, &hsv_shader);
-                let pos_shader = color_shader("color = vec4(pos.xyz, tag);");
-                let pos_scene = Scene::new(&context, &pos_shader);
-                let (cube, cylinder, quad) = ColorView::initialize_models(&context);
-                // let tags = vec![
-                //     Box::new(|view: &mut Self, color: Vec3| {
-
-                //     })
-                // ];
-                let view = ColorView {
-                    window,
-                    // winit_window,
-                    // context,
-                    // event_loop,
-                    width,
-                    height,
-                    control,
-                    selection: vec3(0.0, 0.0, 1.0),
-                    hover: vec3(0.0, 0.0, 1.0),
-                    chunk: vec3(1.0, 1.0, 1.0),
-                    position: vec2(0.0, 0.0),
-                    // tags,
-                    on_select: None,
-                    on_hover: None,
-                    camera,
-                    color_scene,
-                    pos_scene,
-                    cube,
-                    cylinder,
-                    quad,
-                };
-                view
+                use winit::platform::web::WindowBuilderExtWebSys;
+                winit::window::WindowBuilder::new()
+                    .with_canvas(Some(canvas))
+                    .with_inner_size(winit::dpi::LogicalSize::new(width, height))
             }
             _ => panic!("ColorView::new must be passed a canvas!"),
-        }
+        };
+        ColorView::build(window_builder, width, height)
+    }
+
+    fn build(window_builder: WindowBuilder, width: u32, height: u32) -> ColorView {
+        let event_loop = winit::event_loop::EventLoop::new();
+        let winit_window = window_builder.build(&event_loop).unwrap();
+        let window =
+            Window::from_winit_window(winit_window, event_loop, SurfaceSettings::default(), false)
+                .unwrap();
+        let context = window.gl();
+        // let context = WindowedContext::from_winit_window(&winit_window, SurfaceSettings::default()).unwrap();
+
+        let camera = Camera::new_perspective(
+            Viewport::new_at_origo(1, 1),
+            vec3(0.0, 2.0, 4.0),
+            vec3(0.0, 0.5, 0.0),
+            vec3(0.0, 1.0, 0.0),
+            degrees(45.0),
+            0.1,
+            10.0,
+        );
+        let control = OrbitControl::new(*camera.target(), 1.0, 100.0);
+
+        let hsv_shader = color_shader("color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+        let color_scene = Scene::new(&context, &hsv_shader);
+        let pos_shader = color_shader("color = vec4(pos.xyz, tag);");
+        let pos_scene = Scene::new(&context, &pos_shader);
+        let (cube, cylinder, quad) = ColorView::initialize_models(&context);
+        // let tags = vec![
+        //     Box::new(|view: &mut Self, color: Vec3| {
+
+        //     })
+        // ];
+        let view = ColorView {
+            window,
+            // winit_window,
+            // context,
+            // event_loop,
+            width,
+            height,
+            control,
+            selection: vec3(0.0, 0.0, 1.0),
+            hover: vec3(0.0, 0.0, 1.0),
+            chunk: vec3(1.0, 1.0, 1.0),
+            position: vec2(0.0, 0.0),
+            // tags,
+            on_select: None,
+            // on_hover: None,
+            camera,
+            color_scene,
+            pos_scene,
+            cube,
+            cylinder,
+            quad,
+        };
+        view
     }
 
     fn initialize_models(context: &Context) -> (Model, Model, Model) {
@@ -246,7 +251,11 @@ impl ColorView {
                     Event::MouseMotion { position: pos, .. } => {
                         self.position = Vec2::new(pos.x, pos.y);
                     }
-                    Event::MousePress { button, position: pos, .. } => {
+                    Event::MousePress {
+                        button,
+                        position: pos,
+                        ..
+                    } => {
                         self.position = Vec2::new(pos.x, pos.y);
                         press = *button == MouseButton::Left;
                     }
@@ -271,7 +280,8 @@ impl ColorView {
                 .render_with_meta(&screen, &self.quad, quad_view, quad_meta, 7.0);
             let sample_meta = Mat4::from_translation(self.hover) * Mat4::from_scale(0.0);
             let sample_view = Mat4::from_translation(vec3(0.5, 0.5, 0.0));
-            self.color_scene.render_with_meta(&screen, &self.quad, sample_view, sample_meta, 0.0);
+            self.color_scene
+                .render_with_meta(&screen, &self.quad, sample_view, sample_meta, 0.0);
             let position = self.position;
             let mut texture = Texture2D::new_empty::<[f32; 4]>(
                 &context,
@@ -314,9 +324,11 @@ impl ColorView {
                     self.selection = pos;
                 }
                 self.hover = pos;
-            }
-            else {
+            } else {
                 self.hover = self.selection;
+            }
+            if let Some(on_select) = self.on_select.as_mut() {
+                on_select(self.hover.x, self.hover.y, self.hover.z);
             }
             self.chunk = set_with_tag(self.chunk, pos, select);
             self.cube.transform = Mat4::from_translation(self.hover) * Mat4::from_scale(0.05);

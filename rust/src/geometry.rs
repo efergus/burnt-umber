@@ -1,5 +1,4 @@
-use three_d::{Vec3, degrees, Angle, vec3};
-
+use three_d::{degrees, vec3, Angle, Vec3};
 
 pub fn cylinder_mesh(subdivisions: i32) -> Vec<Vec3> {
     let mut positions: Vec<Vec3> = Vec::new();
@@ -14,8 +13,6 @@ pub fn cylinder_mesh(subdivisions: i32) -> Vec<Vec3> {
         let angle = degrees(right_turn * 360.0);
         let right_bottom = Vec3::new(0.0, angle.cos(), angle.sin());
         let right_top = Vec3::new(1.0, angle.cos(), angle.sin());
-        let left_turn = (left_turn * 255.0) as u8;
-        let right_turn = (right_turn * 255.0) as u8;
         positions.push(top);
         positions.push(left_top);
         positions.push(right_top);
@@ -35,7 +32,7 @@ pub fn cylinder_mesh(subdivisions: i32) -> Vec<Vec3> {
     positions
 }
 
-pub fn cone_mesh(subdivisions: i32) -> Vec<Vec3> {
+pub fn _cone_mesh(subdivisions: i32) -> Vec<Vec3> {
     let mut positions: Vec<Vec3> = Vec::new();
     let top = Vec3::new(1.0, 0.0, 0.0);
     let bottom = Vec3::new(0.0, 0.0, 0.0);

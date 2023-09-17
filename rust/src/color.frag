@@ -2,7 +2,6 @@
 #define PI 3.141592653
 
 in vec3 pos;
-// in vec3 embed;
 
 uniform float tag;
 
