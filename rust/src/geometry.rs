@@ -18,6 +18,17 @@ pub fn polar_generator<F: Fn(Vec2, Vec2)->Vec<Vec3>>(subdivisions: u32, start: f
     positions
 }
 
+pub fn unwrap_mesh(mesh: &Vec<Vec3>) -> Vec<Vec3> {
+    mesh.iter().map(|pos| {
+        let flat = vec2(pos.x, pos.z);
+        let mut angle = - flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
+        if angle < 0.0 {
+            angle += 1.0;
+        }
+        vec3(angle, pos.y, 0.0)
+    }).collect()
+}
+
 pub fn tube_mesh(subdivisions: u32) -> Vec<Vec3> {
     polar_generator(subdivisions, 0.0, 1.0, |left, right| {
         let left_top = vec3(left.x, 1.0, -left.y);
