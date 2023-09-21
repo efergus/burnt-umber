@@ -179,20 +179,6 @@ fn color_shader(string: &str) -> String {
     include_str!("color.frag").replace("// REPLACE", string)
 }
 
-fn set_with_tag(source: Vec3, new: Vec3, tag: u8) -> Vec3 {
-    let mut dest = source;
-    if (tag & 1) != 0 {
-        dest.x = new.x;
-    }
-    if (tag & 2) != 0 {
-        dest.y = new.y;
-    }
-    if (tag & 4) != 0 {
-        dest.z = new.z;
-    }
-    dest
-}
-
 #[wasm_bindgen]
 impl ColorView {
     #[cfg(not(target_arch = "wasm32"))]
