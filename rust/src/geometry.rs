@@ -1,5 +1,7 @@
 use three_d::{degrees, vec2, vec3, Angle, Vec2, Vec3};
 
+use crate::log;
+
 fn polar(turn: f32) -> Vec2 {
     let angle = degrees(turn * 360.0);
     vec2(angle.cos(), angle.sin())
@@ -24,16 +26,23 @@ pub fn polar_generator<F: Fn(Vec2, Vec2) -> Vec<Vec3>>(
 }
 
 pub fn unwrap_mesh(mesh: &Vec<Vec3>) -> Vec<Vec3> {
-    mesh.iter()
+    let mut mesh: Vec<Vec3> = mesh.iter()
         .map(|pos| {
             let flat = vec2(pos.x, pos.z);
-            let mut angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
-            if angle < 0.0 {
-                angle += 1.0;
-            }
+            let angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
             vec3(angle, pos.y, 0.0)
         })
-        .collect()
+        .collect();
+    let angle = mesh[0].x;
+    let mut latest = angle;
+    for vec in mesh.iter_mut() {
+        vec.x = vec.x-angle;
+        if latest - vec.x > 0.4 {
+            vec.x += 1.0;
+        }
+        latest = vec.x;
+    }
+    mesh
 }
 
 pub fn tube_mesh(subdivisions: u32) -> Vec<Vec3> {

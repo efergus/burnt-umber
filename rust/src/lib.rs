@@ -4,11 +4,10 @@ extern crate web_sys;
 use renders::{ColorSpace, Cursor, AxisInput};
 use winit::window::WindowBuilder;
 mod geometry;
-use geometry::{cylinder_mesh, quad_mesh, tube_mesh};
 mod renders;
 
 use three_d::{
-    renderer::{control::Event, render_states::*, *},
+    renderer::{control::Event, *},
     FrameOutput, SurfaceSettings, Window,
 };
 use wasm_bindgen::prelude::*;
@@ -25,21 +24,6 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
-
-// struct Uniform<T: UniformDataType> {
-//     name: String,
-//     value: T,
-// }
-
-struct Model {
-    positions: VertexBuffer,
-    embed: Option<VertexBuffer>,
-    transform: Mat4,
-}
-
-// trait Renderable {
-//     fn positions() -> Vec<Vec3>;
-// }
 
 fn to_cylindrical(v: Vec3) -> Vec3 {
     let angle = v.z.atan2(v.x);
@@ -64,9 +48,6 @@ pub struct ColorView {
     width: u32,
     height: u32,
     control: OrbitControl,
-    selection: Vec3,
-    hover: Vec3,
-    chunk: Vec3,
     position: Vec2,
     // tags: Vec<Box<dyn FnMut(&mut ColorView, Vec3)->()>,
     // camera: Camera,
@@ -78,7 +59,7 @@ pub struct ColorView {
     axes: [AxisInput; 3],
     pos_texture: Texture2D,
     depth_texture: DepthTexture2D,
-    on_select: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
+    on_select: Option<Box<dyn FnMut(Vec3) -> ()>>,
     // on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
 }
 
@@ -168,9 +149,6 @@ impl ColorView {
             width,
             height,
             control,
-            selection: vec3(0.0, 1.0, 1.0),
-            hover: vec3(0.0, 1.0, -1.0),
-            chunk: vec3(0.0, 1.0, 1.0),
             position: vec2(0.0, 0.0),
             // tags,
             on_select: None,
@@ -189,56 +167,6 @@ impl ColorView {
             ],
         };
         view
-    }
-
-    fn initialize_models(context: &Context) -> (Model, Model, Model, Model) {
-        let cube = VertexBuffer::new_with_data(&context, &CpuMesh::cube().positions.to_f32());
-        let cylinder = VertexBuffer::new_with_data(&context, &cylinder_mesh(64));
-        let quad = VertexBuffer::new_with_data(&context, &quad_mesh());
-        let tube = tube_mesh(64);
-        let tube_wrap: Vec<Vec3> = tube
-            .iter()
-            .map(|pos| {
-                let flat = vec2(pos.x, pos.z);
-                let mut angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
-                if angle < 0.0 {
-                    angle += 1.0;
-                }
-                // let radius = flat.magnitude2().sqrt();
-                vec3(angle, pos.y, 0.0)
-            })
-            .collect();
-        for i in 0..18 {
-            log(&format!("{:?}", tube_wrap[i]));
-        }
-        log("STEP");
-        for i in (0..(64 * 6)).step_by(8) {
-            log(&format!("{:?}", tube_wrap[i]));
-        }
-        let tube = VertexBuffer::new_with_data(&context, &tube);
-        let tube_wrap = VertexBuffer::new_with_data(&context, &tube_wrap);
-        (
-            Model {
-                positions: cube,
-                embed: None,
-                transform: Mat4::from_scale(0.5) * Mat4::from_translation(Vec3::new(1.0, 1.0, 1.0)),
-            },
-            Model {
-                positions: cylinder,
-                embed: None,
-                transform: Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-            },
-            Model {
-                positions: quad,
-                embed: None,
-                transform: Mat4::identity(),
-            },
-            Model {
-                positions: tube_wrap,
-                embed: Some(tube),
-                transform: Mat4::identity(),
-            },
-        )
     }
 
     pub fn render_loop(mut self) {
@@ -279,7 +207,7 @@ impl ColorView {
                 self.pos_texture.as_color_target(None),
                 self.depth_texture.as_depth_target(),
             );
-            pos_target.clear(ClearState::depth(1.0));
+            pos_target.clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0));
             self.pos_scene.render(&pos_target, cylinder);
             for i in 0..3 {
                 self.pos_scene
@@ -302,11 +230,20 @@ impl ColorView {
                 7 => pos,
                 _ => self.state.saved_cylindrical,
             };
-            if press {
-                self.state.saved_cylindrical = pos;
-            }
+            self.state.chunk = match tag {
+                1 => vec3(pos.x, self.state.chunk.y, self.state.chunk.z),
+                2 => vec3(self.state.chunk.x, pos.y, self.state.chunk.z),
+                3 => vec3(self.state.chunk.x, self.state.chunk.y, pos.z),
+                _ => self.state.chunk,
+            };
             self.state.cylindrical = pos;
             self.state.pos = from_cylindrical(pos);
+            if press {
+                self.state.saved_cylindrical = pos;
+                if let Some(on_select) = self.on_select.as_mut() {
+                    on_select(self.state.pos);
+                }
+            }
             FrameOutput::default()
         });
     }

@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use three_d::{
-    context, vec3, Camera, Color, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
+    vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
     RenderTarget, SquareMatrix, Vec3, VertexBuffer, radians, Zero,
 };
 
@@ -48,12 +48,13 @@ pub struct InputState {
     pub pos: Vec3,
     pub cylindrical: Vec3,
     pub saved_cylindrical: Vec3,
+    pub chunk: Vec3,
     pub camera: Camera,
 }
 
 impl InputState {
     pub fn new(pos: Vec3, camera: Camera) -> Self {
-        InputState { pos, cylindrical: vec3(0.0, 0.0, 0.0), saved_cylindrical: Vec3::zero(), camera }
+        InputState { pos, cylindrical: vec3(0.0, 0.0, 0.0), saved_cylindrical: Vec3::zero(), chunk: vec3(1., 1., 1.), camera }
     }
 }
 
@@ -67,7 +68,7 @@ impl AxisInput {
     pub fn new(context: &Context, axis: u8) -> AxisInput {
         match axis {
             0 => {
-                let tube = tube_mesh(64);
+                let tube = tube_mesh(32);
                 let tube_wrap = unwrap_mesh(&tube);
                 AxisInput {
                     positions: VertexBuffer::new_with_data(context, &tube_wrap),
@@ -100,7 +101,7 @@ impl Renderable<InputState> for AxisInput {
                 Mat4::from_translation(vec3(-0.5, -1.0, 0.0))
                 * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-                Mat4::from_angle_y(radians(state.cylindrical.x * 2.0 * PI))
+                Mat4::from_angle_y(radians(state.cylindrical.x * PI / -4.))
                 * Mat4::from_translation(vec3(0.0, pos.y, 0.0))
                 * Mat4::from_nonuniform_scale(1.0, 0.0, 1.0),
             ),
@@ -142,14 +143,15 @@ impl ColorSpace {
 
 impl Renderable<InputState> for ColorSpace {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
+        let model = Mat4::from_nonuniform_scale(state.chunk.y, state.chunk.z, state.chunk.y);
         Model {
             positions: &self.positions,
             embed: (self.embed.as_ref()).unwrap_or(&self.positions),
             render_states: RenderStates::default(),
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
-            model: Mat4::identity(),
-            meta: Mat4::identity(),
+            model,
+            meta: model,
         }
     }
 }
@@ -179,8 +181,8 @@ impl Renderable<InputState> for Cursor {
             },
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
-            model: Mat4::from_translation(state.pos) * Mat4::from_scale(0.2),
-            meta: Mat4::from_translation(state.pos) * Mat4::from_scale(0.5),
+            model: Mat4::from_translation(state.pos) * Mat4::from_scale(0.05),
+            meta: Mat4::from_scale(0.0),
         }
     }
 }
