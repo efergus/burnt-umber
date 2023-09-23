@@ -76,6 +76,8 @@ pub struct ColorView {
     cursor: Cursor,
     cylinder: ColorSpace,
     axes: [AxisInput; 3],
+    pos_texture: Texture2D,
+    depth_texture: DepthTexture2D,
     on_select: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
     // on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
 }
@@ -136,6 +138,23 @@ impl ColorView {
 
         let color_scene = color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
         let pos_scene = color_program(&context, "color = vec4(pos.xyz, tag);");
+        let pos_texture = Texture2D::new_empty::<[f32; 4]>(
+            &context,
+            width,
+            height,
+            Interpolation::Nearest,
+            Interpolation::Nearest,
+            None,
+            Wrapping::ClampToEdge,
+            Wrapping::ClampToEdge,
+        );
+        let depth_texture = DepthTexture2D::new::<f32>(
+            &context,
+            width,
+            height,
+            Wrapping::ClampToEdge,
+            Wrapping::ClampToEdge,
+        );
         // let tags = vec![
         //     Box::new(|view: &mut Self, color: Vec3| {
 
@@ -159,13 +178,15 @@ impl ColorView {
             state: InputState::new(vec3(0.0, 1.0, 1.0), camera),
             color_scene,
             pos_scene,
+            pos_texture,
+            depth_texture,
             cursor: Cursor::cube(&context),
             cylinder: ColorSpace::cylinder(&context),
             axes: [
                 AxisInput::new(&context, 0),
                 AxisInput::new(&context, 1),
                 AxisInput::new(&context, 2),
-            ]
+            ],
         };
         view
     }
@@ -254,27 +275,9 @@ impl ColorView {
                 self.color_scene
                     .render(&screen, &self.axes[i].model(state));
             }
-
-            let mut texture = Texture2D::new_empty::<[f32; 4]>(
-                &context,
-                self.width,
-                self.height,
-                Interpolation::Nearest,
-                Interpolation::Nearest,
-                None,
-                Wrapping::ClampToEdge,
-                Wrapping::ClampToEdge,
-            );
-            let mut depth_texture = DepthTexture2D::new::<f32>(
-                &context,
-                self.width,
-                self.height,
-                Wrapping::ClampToEdge,
-                Wrapping::ClampToEdge,
-            );
             let pos_target = RenderTarget::new(
-                texture.as_color_target(None),
-                depth_texture.as_depth_target(),
+                self.pos_texture.as_color_target(None),
+                self.depth_texture.as_depth_target(),
             );
             pos_target.clear(ClearState::depth(1.0));
             self.pos_scene.render(&pos_target, cylinder);

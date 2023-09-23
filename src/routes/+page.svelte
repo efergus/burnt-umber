@@ -22,23 +22,18 @@
     }
 </script>
 
-<div>
+<div id="main">
     <!-- Loading -->
     <Center>
         <!-- <Colorpicker /> -->
-        <div>
-            <p class="w-96 h-96">
-                <Canvas bind:r={r} bind:g={g} bind:b={b}/>
-            </p>
-            <div {style}>
-                AAAA
-            </div>
+        <div class="w-96 h-96">
+            <Canvas bind:r={r} bind:g={g} bind:b={b}/>
         </div>
     </Center>
 </div>
 
 <style>
-    div {
+    div#main {
         position: absolute;
         width: 100vw;
         height: 100vh;
