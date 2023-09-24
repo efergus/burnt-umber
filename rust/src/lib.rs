@@ -39,20 +39,131 @@ fn from_cylindrical(v: Vec3) -> Vec3 {
     vec3(x, y, z)
 }
 
+struct CustomController {
+    control: CameraControl,
+    distance: Vec2,
+}
+impl CustomController {
+    /// Creates a new orbit control with the given target and minimum and maximum distance to the target.
+    pub fn new(target: Vec3, min_distance: f32, max_distance: f32) -> Self {
+        Self {
+            control: Self::create_controller(target, min_distance, max_distance),
+            distance: vec2(min_distance, max_distance)
+        }
+    }
+
+    fn create_controller(target: Vec3, min_distance: f32, max_distance: f32) -> CameraControl {
+        CameraControl {
+            left_drag_horizontal: CameraAction::OrbitLeft { target, speed: 0.1 },
+            left_drag_vertical: CameraAction::OrbitUp { target, speed: 0.1 },
+            scroll_vertical: CameraAction::Zoom {
+                min: min_distance,
+                max: max_distance,
+                speed: 0.01,
+                target,
+            },
+            ..Default::default()
+        }
+    }
+
+    pub fn set_target(&mut self, camera: &mut Camera, target: Vec3) {
+        let position = *camera.position();
+        let old_target = *camera.target();
+        camera.set_view(
+            target + position - old_target,
+            target,
+            vec3(0.0, 1.0, 0.0),
+        );
+        self.control = Self::create_controller(target, self.distance.x, self.distance.y)
+    }
+
+    /// Handles the events. Must be called each frame.
+    pub fn handle_events(&mut self, camera: &mut Camera, events: &mut [Event]) -> bool {
+        if let CameraAction::Zoom { speed, target, .. } = &mut self.control.scroll_vertical {
+            let x = target.distance(*camera.position());
+            *speed = 0.001 * x + 0.001;
+        }
+        if let CameraAction::OrbitLeft { speed, target } = &mut self.control.left_drag_horizontal {
+            let x = target.distance(*camera.position());
+            *speed = 0.01 * x + 0.001;
+        }
+        if let CameraAction::OrbitUp { speed, target } = &mut self.control.left_drag_vertical {
+            let x = target.distance(*camera.position());
+            *speed = 0.01 * x + 0.001;
+        }
+        self.control.handle_events(camera, events)
+    }
+}
+
+struct Target<'a> {
+    target: &'a RenderTarget<'a>,
+    program: &'a mut Program,
+    pos_target: &'a RenderTarget<'a>,
+    pos_program: &'a mut Program,
+}
+
+trait Scene<T> {
+    fn render(&self, target: &mut Target, state: T);
+}
+
+struct ColorScene {
+    cursor: Cursor,
+    space: ColorSpace,
+    axes: [AxisInput; 3],
+}
+
+impl ColorScene {
+    fn new(context: &Context, color_space: ColorSpace) -> Self {
+        Self {
+            cursor: Cursor::cube(&context),
+            space: color_space,
+            axes: [
+                AxisInput::new(&context, 0),
+                AxisInput::new(&context, 1),
+                AxisInput::new(&context, 2),
+            ],
+        }
+    }
+
+    fn cylinder(context: &Context) -> Self {
+        Self::new(context, ColorSpace::cylinder(context))
+    }
+
+    fn cube(context: &Context) -> Self {
+        Self::new(context, ColorSpace::cube(context))
+    }
+}
+
+impl Scene<&InputState> for ColorScene {
+    fn render(&self, target: &mut Target, state: &InputState) {
+        let space = &self.space.model(state);
+        let screen = target.target;
+        target.program.render(screen, space);
+        target.program.render(screen, &self.cursor.model(state));
+        for i in 0..3 {
+            target.program.render(screen, &self.axes[i].model(state));
+        }
+        let screen = target.pos_target;
+        target.pos_program.render(screen, space);
+        for i in 0..3 {
+            target.pos_program.render(screen, &self.axes[i].model(state));
+        }
+    }
+}
+
 #[wasm_bindgen]
 pub struct ColorView {
     window: Window,
     // width: u32,
     height: u32,
-    control: OrbitControl,
+    control: CustomController,
     position: Vec2,
     state: InputState,
-    cylindrical_scene: Program,
-    linear_scene: Program,
-    pos_scene: Program,
-    cursor: Cursor,
-    space: ColorSpace,
-    axes: [AxisInput; 3],
+    cylindrical_program: Program,
+    linear_program: Program,
+    pos_program: Program,
+    cylindrical_scene: ColorScene,
+    linear_scene: ColorScene,
     pos_texture: Texture2D,
     depth_texture: DepthTexture2D,
     on_select: Option<Box<dyn FnMut(Vec3) -> ()>>,
@@ -105,18 +216,18 @@ impl ColorView {
         let camera = Camera::new_perspective(
             Viewport::new_at_origo(1, 1),
             vec3(0.0, 2.0, 4.0),
-            vec3(0.5, 0.5, 0.5),
+            vec3(0.0, 0.5, 0.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
             0.1,
             10.0,
         );
-        let control = OrbitControl::new(*camera.target(), 1.0, 100.0);
+        let control = CustomController::new(*camera.target(), 1.0, 100.0);
 
-        let cylindrical_scene =
+        let cylindrical_program =
             color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
-        let linear_scene = color_program(&context, "color = vec4(pos.xyz, 1.0);");
-        let pos_scene = color_program(&context, "color = vec4(pos.xyz, tag);");
+        let linear_program = color_program(&context, "color = vec4(pos.xyz, 1.0);");
+        let pos_program = color_program(&context, "color = vec4(pos.xyz, tag);");
         let pos_texture = Texture2D::new_empty::<[f32; 4]>(
             &context,
             width,
@@ -142,19 +253,14 @@ impl ColorView {
             position: vec2(0.0, 0.0),
             on_select: None,
             // on_hover: None,
-            state: InputState::new(vec3(0.0, 1.0, 1.0), camera, Space::Linear),
-            cylindrical_scene,
-            linear_scene,
-            pos_scene,
+            state: InputState::new(vec3(0.0, 1.0, 1.0), camera, Space::Cylindrical),
+            cylindrical_program,
+            linear_program,
+            pos_program,
+            cylindrical_scene: ColorScene::cylinder(&context),
+            linear_scene: ColorScene::cube(&context),
             pos_texture,
             depth_texture,
-            cursor: Cursor::cube(&context),
-            space: ColorSpace::new(&context),
-            axes: [
-                AxisInput::new(&context, 0),
-                AxisInput::new(&context, 1),
-                AxisInput::new(&context, 2),
-            ],
         };
         view
     }
@@ -182,28 +288,24 @@ impl ColorView {
                 .handle_events(&mut self.state.camera, &mut input.events);
             let screen = input.screen();
             let state = &self.state;
-            let scene = if self.state.space == Space::Linear {
-                &mut self.linear_scene
-            } else {
-                &mut self.cylindrical_scene
-            };
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
-            let space = &self.space.model(state);
-            scene.render(&screen, space);
-            scene.render(&screen, &self.cursor.model(state));
-            for i in 0..3 {
-                scene.render(&screen, &self.axes[i].model(state));
-            }
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),
                 self.depth_texture.as_depth_target(),
             );
             pos_target.clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0));
-            self.pos_scene.render(&pos_target, space);
-            for i in 0..3 {
-                self.pos_scene
-                    .render(&pos_target, &self.axes[i].model(state));
-            }
+            let (program, scene) = if self.state.space == Space::Linear {
+                (&mut self.linear_program, &self.linear_scene)
+            } else {
+                (&mut self.cylindrical_program, &self.cylindrical_scene)
+            };
+            let mut target = Target {
+                target: &screen,
+                program,
+                pos_target: &pos_target,
+                pos_program: &mut self.pos_program,
+            };
+            scene.render(&mut target, state);
             let position = self.position;
             let scissor_box = ScissorBox {
                 x: position.x as i32,
@@ -237,5 +339,18 @@ impl ColorView {
             }
             FrameOutput::default()
         });
+    }
+
+    pub fn set_space(&mut self, space: String) {
+        self.state.space = match space.as_str() {
+            "linear" => Space::Linear,
+            "cylindrical" => Space::Cylindrical,
+            _ => panic!("Expected 'linear' or 'cylindrical")
+        };
+        let new_target = match self.state.space {
+            Space::Linear => vec3(0.5, 0.5, 0.5),
+            Space::Cylindrical => vec3(0.0, 0.5, 0.0),
+        };
+        self.control.set_target(&mut self.state.camera, new_target)
     }
 }

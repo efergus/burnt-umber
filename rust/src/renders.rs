@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use three_d::{
     radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer, Zero,
+    RenderTarget, Vec3, VertexBuffer, Zero, degrees,
 };
 
 use crate::geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh};
@@ -103,19 +103,22 @@ impl AxisInput {
 impl Renderable<InputState> for AxisInput {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
         let pos = state.pos;
+        let direction = state.camera.position() - state.camera.target();
+        let camera_angle = direction.z.atan2(direction.x) / PI / 2.0;
         let (view, model, meta) = match self.axis {
             0 => (
                 Mat4::from_translation(vec3(-0.5, 0.8, 0.0))
                     * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
                 Mat4::from_translation(vec3(0.0, pos.y, 0.0))
+                    * Mat4::from_angle_y(degrees(-camera_angle * 360.0 + 180.0))
                     * Mat4::from_nonuniform_scale(state.cylindrical.y, 0.0, state.cylindrical.y),
             ),
             1 => (
                 Mat4::from_translation(vec3(-0.5, -1.0, 0.0))
                     * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-                Mat4::from_angle_y(radians(state.cylindrical.x * PI / -4.))
+                Mat4::from_angle_y(degrees(state.cylindrical.x * 90.0))
                     * Mat4::from_translation(vec3(0.0, pos.y, 0.0))
                     * Mat4::from_nonuniform_scale(1.0, 0.0, 1.0),
             ),
@@ -146,32 +149,24 @@ impl Renderable<InputState> for AxisInput {
 }
 
 pub struct ColorSpace {
-    cylinder_positions: VertexBuffer,
-    cube_positions: VertexBuffer,
+    positions: VertexBuffer,
 }
 
 impl ColorSpace {
-    pub fn new(context: &Context) -> Self {
-        let cylinder = cylinder_mesh(64);
-        let cube = cube_mesh();
-        ColorSpace {
-            cylinder_positions: VertexBuffer::new_with_data(context, &cylinder),
-            cube_positions: VertexBuffer::new_with_data(context, &cube),
-        }
+    pub fn cylinder(context: &Context) -> Self {
+        ColorSpace { positions: VertexBuffer::new_with_data(context, &cylinder_mesh(64)) }
+    }
+    pub fn cube(context: &Context) -> Self {
+        ColorSpace { positions: VertexBuffer::new_with_data(context, &cube_mesh()) }
     }
 }
 
 impl Renderable<InputState> for ColorSpace {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
         let model = Mat4::from_nonuniform_scale(state.chunk.y, state.chunk.z, state.chunk.y);
-        let positions = if state.space == Space::Linear {
-            &self.cube_positions
-        } else {
-            &self.cylinder_positions
-        };
         Model {
-            positions,
-            embed: positions,
+            positions: &self.positions,
+            embed: &self.positions,
             render_states: RenderStates::default(),
             tag: 7,
             view: state.camera.projection() * state.camera.view(),

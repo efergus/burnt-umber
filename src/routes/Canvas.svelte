@@ -8,6 +8,8 @@
     export let r = 0;
     export let g = 0;
     export let b = 0;
+    export let space = "cylindrical";
+    let view: ColorView | undefined = undefined;
     let canvas: HTMLCanvasElement;
     let program: WebGLProgram;
     let vaos: (WebGLVertexArrayObject | null)[] = [];
@@ -18,6 +20,7 @@
     //     canvas.width = canvas.getBoundingClientRect().width;
     //     canvas.height = canvas.getBoundingClientRect().height;
     // }
+    // $: view?.set_space(space)
 
     const initializePosition = (gl: WebGL2RenderingContext) => {
         let positionLoc = gl.getAttribLocation(program, "a_position")
@@ -90,16 +93,10 @@
         // render();
         await init();
         const rect = canvas.getBoundingClientRect();
-        const view = ColorView.new(canvas, rect.width, rect.height);
+        view = ColorView.new(canvas, rect.width, rect.height);
         console.log(view);
+        // view.set_space(space);
         view.render_loop();
-        // new_canvas(canvas, rect.width, rect.height, (x: number, y: number, z: number)=>{
-        //     console.log(x, y, z);
-        //     r = x;
-        //     g = y;
-        //     b = z;
-        // });
-        // canvas.addEventListener("mousemove", pick);
     });
 </script>
 
