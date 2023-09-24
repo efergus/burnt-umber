@@ -30,13 +30,13 @@ fn to_cylindrical(v: Vec3) -> Vec3 {
     let angle = v.z.atan2(v.x);
     let radius = vec2(v.x, v.z).magnitude();
     let y = v.y;
-    vec3(angle, radius, y)
+    vec3(angle, y, radius)
 }
 
 fn from_cylindrical(v: Vec3) -> Vec3 {
-    let x = v.x.cos() * v.y;
-    let z = v.x.sin() * v.y;
-    let y = v.z;
+    let x = v.x.cos() * v.z;
+    let z = v.x.sin() * v.z;
+    let y = v.y;
     vec3(x, y, z)
 }
 

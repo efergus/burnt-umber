@@ -137,9 +137,8 @@ impl Renderable<InputState> for AxisInput {
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
                 match state.space {
                     Space::Cylindrical => {
-                        Mat4::from_translation(vec3(0.0, pos.y, 0.0))
-                            * Mat4::from_angle_y(radians(-state.cylindrical.x))
-                            * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0)
+                        Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
+                            * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0)
                     }
                     Space::Linear => {
                         Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
@@ -153,8 +152,9 @@ impl Renderable<InputState> for AxisInput {
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
                 match state.space {
                     Space::Cylindrical => {
-                        Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
-                            * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0)
+                        Mat4::from_translation(vec3(0.0, pos.y, 0.0))
+                            * Mat4::from_angle_y(radians(-state.cylindrical.x))
+                            * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0)
                     }
                     Space::Linear => {
                         Mat4::from_translation(vec3(pos.x, pos.y, 0.0))
@@ -206,7 +206,7 @@ impl Renderable<InputState> for ColorSpace {
                 Mat4::from_nonuniform_scale(state.chunk.x, state.chunk.y, state.chunk.z)
             }
             Space::Cylindrical => {
-                Mat4::from_nonuniform_scale(state.chunk.y, state.chunk.z, state.chunk.y)
+                Mat4::from_nonuniform_scale(state.chunk.z, state.chunk.y, state.chunk.z)
             }
         };
         Model {
