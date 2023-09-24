@@ -1,11 +1,11 @@
 use std::f32::consts::PI;
 
 use three_d::{
-    vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, SquareMatrix, Vec3, VertexBuffer, radians, Zero,
+    radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
+    RenderTarget, Vec3, VertexBuffer, Zero,
 };
 
-use crate::geometry::{cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh};
+use crate::geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh};
 
 pub struct Model<'a> {
     positions: &'a VertexBuffer,
@@ -44,17 +44,31 @@ impl Renderer for Program {
     }
 }
 
+#[derive(PartialEq)]
+pub enum Space {
+    Linear,
+    Cylindrical,
+}
+
 pub struct InputState {
     pub pos: Vec3,
     pub cylindrical: Vec3,
     pub saved_cylindrical: Vec3,
     pub chunk: Vec3,
     pub camera: Camera,
+    pub space: Space,
 }
 
 impl InputState {
-    pub fn new(pos: Vec3, camera: Camera) -> Self {
-        InputState { pos, cylindrical: vec3(0.0, 0.0, 0.0), saved_cylindrical: Vec3::zero(), chunk: vec3(1., 1., 1.), camera }
+    pub fn new(pos: Vec3, camera: Camera, space: Space) -> Self {
+        InputState {
+            pos,
+            cylindrical: vec3(0.0, 0.0, 0.0),
+            saved_cylindrical: Vec3::zero(),
+            chunk: vec3(1., 1., 1.),
+            camera,
+            space,
+        }
     }
 }
 
@@ -75,7 +89,7 @@ impl AxisInput {
                     embed: VertexBuffer::new_with_data(context, &tube),
                     axis,
                 }
-            },
+            }
             1 | 2 => AxisInput {
                 positions: VertexBuffer::new_with_data(context, &quad_mesh()),
                 embed: VertexBuffer::new_with_data(context, &quad_mesh()),
@@ -92,31 +106,36 @@ impl Renderable<InputState> for AxisInput {
         let (view, model, meta) = match self.axis {
             0 => (
                 Mat4::from_translation(vec3(-0.5, 0.8, 0.0))
-                * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
+                    * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
                 Mat4::from_translation(vec3(0.0, pos.y, 0.0))
-                * Mat4::from_nonuniform_scale(state.cylindrical.y, 0.0, state.cylindrical.y),
+                    * Mat4::from_nonuniform_scale(state.cylindrical.y, 0.0, state.cylindrical.y),
             ),
             1 => (
                 Mat4::from_translation(vec3(-0.5, -1.0, 0.0))
-                * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
+                    * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
                 Mat4::from_angle_y(radians(state.cylindrical.x * PI / -4.))
-                * Mat4::from_translation(vec3(0.0, pos.y, 0.0))
-                * Mat4::from_nonuniform_scale(1.0, 0.0, 1.0),
+                    * Mat4::from_translation(vec3(0.0, pos.y, 0.0))
+                    * Mat4::from_nonuniform_scale(1.0, 0.0, 1.0),
             ),
             2 => (
                 Mat4::from_translation(vec3(-1.0, -0.5, 0.0))
-                * Mat4::from_nonuniform_scale(0.2, 1.0, 1.0),
+                    * Mat4::from_nonuniform_scale(0.2, 1.0, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
                 Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
-                * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0),
+                    * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0),
             ),
             _ => panic!("Unknown axis"),
         };
+        let embed = if state.space == Space::Cylindrical && self.axis == 0 {
+            &self.embed
+        } else {
+            &self.positions
+        };
         Model {
             positions: &self.positions,
-            embed: &self.embed,
+            embed,
             render_states: RenderStates::default(),
             tag: self.axis + 1,
             view,
@@ -127,16 +146,17 @@ impl Renderable<InputState> for AxisInput {
 }
 
 pub struct ColorSpace {
-    positions: VertexBuffer,
-    embed: Option<VertexBuffer>,
+    cylinder_positions: VertexBuffer,
+    cube_positions: VertexBuffer,
 }
 
 impl ColorSpace {
-    pub fn cylinder(context: &Context) -> Self {
-        let data = cylinder_mesh(64);
+    pub fn new(context: &Context) -> Self {
+        let cylinder = cylinder_mesh(64);
+        let cube = cube_mesh();
         ColorSpace {
-            positions: VertexBuffer::new_with_data(context, &data),
-            embed: None,
+            cylinder_positions: VertexBuffer::new_with_data(context, &cylinder),
+            cube_positions: VertexBuffer::new_with_data(context, &cube),
         }
     }
 }
@@ -144,9 +164,14 @@ impl ColorSpace {
 impl Renderable<InputState> for ColorSpace {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
         let model = Mat4::from_nonuniform_scale(state.chunk.y, state.chunk.z, state.chunk.y);
+        let positions = if state.space == Space::Linear {
+            &self.cube_positions
+        } else {
+            &self.cylinder_positions
+        };
         Model {
-            positions: &self.positions,
-            embed: (self.embed.as_ref()).unwrap_or(&self.positions),
+            positions,
+            embed: positions,
             render_states: RenderStates::default(),
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
@@ -162,7 +187,7 @@ pub struct Cursor {
 
 impl Cursor {
     pub fn cube(context: &Context) -> Self {
-        let data = &CpuMesh::cube().positions.to_f32();
+        let data = CpuMesh::cube().positions.to_f32();
         Cursor {
             positions: VertexBuffer::new_with_data(context, &data),
         }

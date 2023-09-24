@@ -1,7 +1,7 @@
 extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
-use renders::{ColorSpace, Cursor, AxisInput};
+use renders::{AxisInput, ColorSpace, Cursor};
 use winit::window::WindowBuilder;
 mod geometry;
 mod renders;
@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 
-use crate::renders::{InputState, Renderable, Renderer};
+use crate::renders::{InputState, Renderable, Renderer, Space};
 // use
 
 #[wasm_bindgen]
@@ -41,21 +41,17 @@ fn from_cylindrical(v: Vec3) -> Vec3 {
 
 #[wasm_bindgen]
 pub struct ColorView {
-    // winit_window: winit::window::Window,
-    // context: WindowedContext,
-    // event_loop: EventLoop<()>,
     window: Window,
-    width: u32,
+    // width: u32,
     height: u32,
     control: OrbitControl,
     position: Vec2,
-    // tags: Vec<Box<dyn FnMut(&mut ColorView, Vec3)->()>,
-    // camera: Camera,
     state: InputState,
-    color_scene: Program,
+    cylindrical_scene: Program,
+    linear_scene: Program,
     pos_scene: Program,
     cursor: Cursor,
-    cylinder: ColorSpace,
+    space: ColorSpace,
     axes: [AxisInput; 3],
     pos_texture: Texture2D,
     depth_texture: DepthTexture2D,
@@ -109,7 +105,7 @@ impl ColorView {
         let camera = Camera::new_perspective(
             Viewport::new_at_origo(1, 1),
             vec3(0.0, 2.0, 4.0),
-            vec3(0.0, 0.5, 0.0),
+            vec3(0.5, 0.5, 0.5),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
             0.1,
@@ -117,7 +113,9 @@ impl ColorView {
         );
         let control = OrbitControl::new(*camera.target(), 1.0, 100.0);
 
-        let color_scene = color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+        let cylindrical_scene =
+            color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+        let linear_scene = color_program(&context, "color = vec4(pos.xyz, 1.0);");
         let pos_scene = color_program(&context, "color = vec4(pos.xyz, tag);");
         let pos_texture = Texture2D::new_empty::<[f32; 4]>(
             &context,
@@ -136,30 +134,22 @@ impl ColorView {
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
         );
-        // let tags = vec![
-        //     Box::new(|view: &mut Self, color: Vec3| {
-
-        //     })
-        // ];
         let view = ColorView {
             window,
-            // winit_window,
-            // context,
-            // event_loop,
-            width,
+            // width,
             height,
             control,
             position: vec2(0.0, 0.0),
-            // tags,
             on_select: None,
             // on_hover: None,
-            state: InputState::new(vec3(0.0, 1.0, 1.0), camera),
-            color_scene,
+            state: InputState::new(vec3(0.0, 1.0, 1.0), camera, Space::Linear),
+            cylindrical_scene,
+            linear_scene,
             pos_scene,
             pos_texture,
             depth_texture,
             cursor: Cursor::cube(&context),
-            cylinder: ColorSpace::cylinder(&context),
+            space: ColorSpace::new(&context),
             axes: [
                 AxisInput::new(&context, 0),
                 AxisInput::new(&context, 1),
@@ -170,8 +160,6 @@ impl ColorView {
     }
 
     pub fn render_loop(mut self) {
-        let context = self.window.gl();
-
         self.window.render_loop(move |mut input| {
             let mut press = false;
             for event in input.events.iter() {
@@ -194,21 +182,24 @@ impl ColorView {
                 .handle_events(&mut self.state.camera, &mut input.events);
             let screen = input.screen();
             let state = &self.state;
+            let scene = if self.state.space == Space::Linear {
+                &mut self.linear_scene
+            } else {
+                &mut self.cylindrical_scene
+            };
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
-            let cylinder = &self.cylinder.model(state);
-            self.color_scene.render(&screen, cylinder);
-            self.color_scene
-                .render(&screen, &self.cursor.model(state));
+            let space = &self.space.model(state);
+            scene.render(&screen, space);
+            scene.render(&screen, &self.cursor.model(state));
             for i in 0..3 {
-                self.color_scene
-                    .render(&screen, &self.axes[i].model(state));
+                scene.render(&screen, &self.axes[i].model(state));
             }
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),
                 self.depth_texture.as_depth_target(),
             );
             pos_target.clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0));
-            self.pos_scene.render(&pos_target, cylinder);
+            self.pos_scene.render(&pos_target, space);
             for i in 0..3 {
                 self.pos_scene
                     .render(&pos_target, &self.axes[i].model(state));

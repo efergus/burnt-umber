@@ -1,7 +1,5 @@
 use three_d::{degrees, vec2, vec3, Angle, Vec2, Vec3};
 
-use crate::log;
-
 fn polar(turn: f32) -> Vec2 {
     let angle = degrees(turn * 360.0);
     vec2(angle.cos(), angle.sin())
@@ -26,7 +24,8 @@ pub fn polar_generator<F: Fn(Vec2, Vec2) -> Vec<Vec3>>(
 }
 
 pub fn unwrap_mesh(mesh: &Vec<Vec3>) -> Vec<Vec3> {
-    let mut mesh: Vec<Vec3> = mesh.iter()
+    let mut mesh: Vec<Vec3> = mesh
+        .iter()
         .map(|pos| {
             let flat = vec2(pos.x, pos.z);
             let angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
@@ -36,7 +35,7 @@ pub fn unwrap_mesh(mesh: &Vec<Vec3>) -> Vec<Vec3> {
     let angle = mesh[0].x;
     let mut latest = angle;
     for vec in mesh.iter_mut() {
-        vec.x = vec.x-angle;
+        vec.x = vec.x - angle;
         if latest - vec.x > 0.4 {
             vec.x += 1.0;
         }
@@ -106,6 +105,53 @@ pub fn quad_mesh() -> Vec<Vec3> {
         vec3(1.0, 0.0, 0.0),
         vec3(1.0, 1.0, 0.0),
     ];
+}
+
+pub fn cube_mesh() -> Vec<Vec3> {
+    vec![
+        // Up
+        vec3(1.0, 1.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(0.0, 1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(0.0, 1.0, 0.0),
+        // Down
+        vec3(0.0, 0.0, 0.0),
+        vec3(1.0, 0.0, 0.0),
+        vec3(1.0, 0.0, 1.0),
+        vec3(1.0, 0.0, 1.0),
+        vec3(0.0, 0.0, 1.0),
+        vec3(0.0, 0.0, 0.0),
+        // Back
+        vec3(1.0, 0.0, 0.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(1.0, 1.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        vec3(1.0, 1.0, 0.0),
+        vec3(0.0, 0.0, 0.0),
+        // Front
+        vec3(0.0, 0.0, 1.0),
+        vec3(1.0, 0.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(0.0, 1.0, 1.0),
+        vec3(0.0, 0.0, 1.0),
+        // Right
+        vec3(1.0, 0.0, 0.0),
+        vec3(1.0, 1.0, 0.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, 0.0, 1.0),
+        vec3(1.0, 0.0, 0.0),
+        // Left
+        vec3(0.0, 1.0, 0.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 1.0),
+        vec3(0.0, 0.0, 1.0),
+        vec3(0.0, 1.0, 1.0),
+        vec3(0.0, 0.0, 0.0),
+    ]
 }
 
 // fn sphere(subdivisions: u32) -> Vec<Vec3> {
