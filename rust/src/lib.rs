@@ -1,6 +1,7 @@
 extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
+
 use renders::{AxisInput, ColorSpace, Cursor};
 use winit::window::WindowBuilder;
 mod geometry;
@@ -48,7 +49,7 @@ impl CustomController {
     pub fn new(target: Vec3, min_distance: f32, max_distance: f32) -> Self {
         Self {
             control: Self::create_controller(target, min_distance, max_distance),
-            distance: vec2(min_distance, max_distance)
+            distance: vec2(min_distance, max_distance),
         }
     }
 
@@ -69,11 +70,7 @@ impl CustomController {
     pub fn set_target(&mut self, camera: &mut Camera, target: Vec3) {
         let position = *camera.position();
         let old_target = *camera.target();
-        camera.set_view(
-            target + position - old_target,
-            target,
-            vec3(0.0, 1.0, 0.0),
-        );
+        camera.set_view(target + position - old_target, target, vec3(0.0, 1.0, 0.0));
         self.control = Self::create_controller(target, self.distance.x, self.distance.y)
     }
 
@@ -146,7 +143,9 @@ impl Scene<&InputState> for ColorScene {
         let screen = target.pos_target;
         target.pos_program.render(screen, space);
         for i in 0..3 {
-            target.pos_program.render(screen, &self.axes[i].model(state));
+            target
+                .pos_program
+                .render(screen, &self.axes[i].model(state));
         }
     }
 }
@@ -253,7 +252,7 @@ impl ColorView {
             position: vec2(0.0, 0.0),
             on_select: None,
             // on_hover: None,
-            state: InputState::new(vec3(0.0, 1.0, 1.0), camera, Space::Cylindrical),
+            state: InputState::new(vec3(0.0, 1.0, 1.0), camera, Space::Linear),
             cylindrical_program,
             linear_program,
             pos_program,
@@ -345,7 +344,7 @@ impl ColorView {
         self.state.space = match space.as_str() {
             "linear" => Space::Linear,
             "cylindrical" => Space::Cylindrical,
-            _ => panic!("Expected 'linear' or 'cylindrical")
+            _ => panic!("Expected 'linear' or 'cylindrical"),
         };
         let new_target = match self.state.space {
             Space::Linear => vec3(0.5, 0.5, 0.5),

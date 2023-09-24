@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
 use three_d::{
-    radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer, Zero, degrees,
+    degrees, radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
+    RenderTarget, Vec3, VertexBuffer, Zero, SquareMatrix,
 };
 
 use crate::geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh};
@@ -104,23 +104,38 @@ impl Renderable<InputState> for AxisInput {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
         let pos = state.pos;
         let direction = state.camera.position() - state.camera.target();
-        let camera_angle = direction.z.atan2(direction.x) / PI / 2.0;
+        let camera_angle = direction.z.atan2(direction.x);
         let (view, model, meta) = match self.axis {
             0 => (
                 Mat4::from_translation(vec3(-0.5, 0.8, 0.0))
                     * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-                Mat4::from_translation(vec3(0.0, pos.y, 0.0))
-                    * Mat4::from_angle_y(degrees(-camera_angle * 360.0 + 180.0))
-                    * Mat4::from_nonuniform_scale(state.cylindrical.y, 0.0, state.cylindrical.y),
+                match state.space {
+                    Space::Cylindrical => {
+                        Mat4::from_translation(vec3(0.0, pos.y, 0.0))
+                            * Mat4::from_angle_y(radians(-camera_angle + PI))
+                            * Mat4::from_nonuniform_scale(
+                                state.cylindrical.y,
+                                0.0,
+                                state.cylindrical.y,
+                            )
+                    }
+                    Space::Linear => {
+                        Mat4::from_translation(vec3(pos.x, pos.y, 0.0))
+                        * Mat4::from_nonuniform_scale(0.0, 0.0, 1.0)
+                            * Mat4::from_angle_y(degrees(-90.0))
+                    }
+                },
             ),
             1 => (
                 Mat4::from_translation(vec3(-0.5, -1.0, 0.0))
                     * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-                Mat4::from_angle_y(degrees(state.cylindrical.x * 90.0))
-                    * Mat4::from_translation(vec3(0.0, pos.y, 0.0))
-                    * Mat4::from_nonuniform_scale(1.0, 0.0, 1.0),
+                 match state.space {
+                        Space::Cylindrical => Mat4::from_translation(vec3(0.0, pos.y, 0.0)) * Mat4::from_angle_y(radians(-state.cylindrical.x)),
+                        Space::Linear =>  Mat4::from_translation(vec3(0.0, pos.y, pos.z)),
+                    }
+                    * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0),
             ),
             2 => (
                 Mat4::from_translation(vec3(-1.0, -0.5, 0.0))
@@ -154,10 +169,14 @@ pub struct ColorSpace {
 
 impl ColorSpace {
     pub fn cylinder(context: &Context) -> Self {
-        ColorSpace { positions: VertexBuffer::new_with_data(context, &cylinder_mesh(64)) }
+        ColorSpace {
+            positions: VertexBuffer::new_with_data(context, &cylinder_mesh(64)),
+        }
     }
     pub fn cube(context: &Context) -> Self {
-        ColorSpace { positions: VertexBuffer::new_with_data(context, &cube_mesh()) }
+        ColorSpace {
+            positions: VertexBuffer::new_with_data(context, &cube_mesh()),
+        }
     }
 }
 
