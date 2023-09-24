@@ -1,11 +1,14 @@
 use std::f32::consts::PI;
 
 use three_d::{
-    degrees, radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer, Zero, SquareMatrix,
+    radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
+    RenderTarget, Vec3, VertexBuffer, degrees,
 };
 
-use crate::geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh};
+use crate::{
+    geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh},
+    to_cylindrical,
+};
 
 pub struct Model<'a> {
     positions: &'a VertexBuffer,
@@ -52,6 +55,7 @@ pub enum Space {
 
 pub struct InputState {
     pub pos: Vec3,
+    pub saved_pos: Vec3,
     pub cylindrical: Vec3,
     pub saved_cylindrical: Vec3,
     pub chunk: Vec3,
@@ -63,8 +67,9 @@ impl InputState {
     pub fn new(pos: Vec3, camera: Camera, space: Space) -> Self {
         InputState {
             pos,
-            cylindrical: vec3(0.0, 0.0, 0.0),
-            saved_cylindrical: Vec3::zero(),
+            saved_pos: pos,
+            cylindrical: to_cylindrical(pos),
+            saved_cylindrical: to_cylindrical(pos),
             chunk: vec3(1., 1., 1.),
             camera,
             space,
@@ -121,28 +126,42 @@ impl Renderable<InputState> for AxisInput {
                             )
                     }
                     Space::Linear => {
-                        Mat4::from_translation(vec3(pos.x, pos.y, 0.0))
-                        * Mat4::from_nonuniform_scale(0.0, 0.0, 1.0)
-                            * Mat4::from_angle_y(degrees(-90.0))
+                        Mat4::from_translation(vec3(0.0, pos.y, pos.z))
+                            * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0)
                     }
                 },
             ),
             1 => (
-                Mat4::from_translation(vec3(-0.5, -1.0, 0.0))
-                    * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
-                Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-                 match state.space {
-                        Space::Cylindrical => Mat4::from_translation(vec3(0.0, pos.y, 0.0)) * Mat4::from_angle_y(radians(-state.cylindrical.x)),
-                        Space::Linear =>  Mat4::from_translation(vec3(0.0, pos.y, pos.z)),
-                    }
-                    * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0),
-            ),
-            2 => (
                 Mat4::from_translation(vec3(-1.0, -0.5, 0.0))
                     * Mat4::from_nonuniform_scale(0.2, 1.0, 1.0),
                 Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
-                Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
-                    * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0),
+                match state.space {
+                    Space::Cylindrical => {
+                        Mat4::from_translation(vec3(0.0, pos.y, 0.0))
+                            * Mat4::from_angle_y(radians(-state.cylindrical.x))
+                            * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0)
+                    }
+                    Space::Linear => {
+                        Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
+                            * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0)
+                    }
+                },
+            ),
+            2 => (
+                Mat4::from_translation(vec3(-0.5, -1.0, 0.0))
+                    * Mat4::from_nonuniform_scale(1.0, 0.2, 1.0),
+                Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
+                match state.space {
+                    Space::Cylindrical => {
+                        Mat4::from_translation(vec3(pos.x, 0.0, pos.z))
+                            * Mat4::from_nonuniform_scale(0.0, 1.0, 0.0)
+                    }
+                    Space::Linear => {
+                        Mat4::from_translation(vec3(pos.x, pos.y, 0.0))
+                            * Mat4::from_angle_y(degrees(-90.0))
+                            * Mat4::from_nonuniform_scale(1.0, 0.0, 0.0)
+                    }
+                },
             ),
             _ => panic!("Unknown axis"),
         };
@@ -182,7 +201,14 @@ impl ColorSpace {
 
 impl Renderable<InputState> for ColorSpace {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
-        let model = Mat4::from_nonuniform_scale(state.chunk.y, state.chunk.z, state.chunk.y);
+        let model = match state.space {
+            Space::Linear => {
+                Mat4::from_nonuniform_scale(state.chunk.x, state.chunk.y, state.chunk.z)
+            }
+            Space::Cylindrical => {
+                Mat4::from_nonuniform_scale(state.chunk.y, state.chunk.z, state.chunk.y)
+            }
+        };
         Model {
             positions: &self.positions,
             embed: &self.positions,

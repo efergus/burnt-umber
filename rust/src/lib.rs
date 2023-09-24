@@ -252,7 +252,7 @@ impl ColorView {
             position: vec2(0.0, 0.0),
             on_select: None,
             // on_hover: None,
-            state: InputState::new(vec3(0.0, 1.0, 1.0), camera, Space::Linear),
+            state: InputState::new(vec3(1.0, 1.0, 1.0), camera, Space::Linear),
             cylindrical_program,
             linear_program,
             pos_program,
@@ -314,13 +314,20 @@ impl ColorView {
             };
             let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
             let tag = pos[3] as u8;
-            let pos = to_cylindrical(vec3(pos[0], pos[1], pos[2]));
+            let mut pos = vec3(pos[0], pos[1], pos[2]);
+            let mut pos_state = self.state.pos;
+            let mut saved = self.state.saved_pos;
+            if self.state.space == Space::Cylindrical {
+                pos = to_cylindrical(pos);
+                pos_state = self.state.cylindrical;
+                saved = self.state.saved_pos;
+            }
             let pos = match tag {
-                1 => vec3(pos.x, self.state.cylindrical.y, self.state.cylindrical.z),
-                2 => vec3(self.state.cylindrical.x, pos.y, self.state.cylindrical.z),
-                3 => vec3(self.state.cylindrical.x, self.state.cylindrical.y, pos.z),
+                1 => vec3(pos.x, pos_state.y, pos_state.z),
+                2 => vec3(pos_state.x, pos.y, pos_state.z),
+                3 => vec3(pos_state.x, pos_state.y, pos.z),
                 7 => pos,
-                _ => self.state.saved_cylindrical,
+                _ => saved,
             };
             self.state.chunk = match tag {
                 1 => vec3(pos.x, self.state.chunk.y, self.state.chunk.z),
@@ -328,10 +335,17 @@ impl ColorView {
                 3 => vec3(self.state.chunk.x, self.state.chunk.y, pos.z),
                 _ => self.state.chunk,
             };
-            self.state.cylindrical = pos;
-            self.state.pos = from_cylindrical(pos);
+            // log(&format!("{:?} {:?}", self.state.chunk, pos));
+            if self.state.space == Space::Cylindrical {
+                self.state.cylindrical = pos;
+                self.state.pos = from_cylindrical(pos);
+            } else {
+                self.state.cylindrical = to_cylindrical(pos);
+                self.state.pos = pos;
+            }
             if press {
-                self.state.saved_cylindrical = pos;
+                self.state.saved_cylindrical = self.state.cylindrical;
+                self.state.saved_pos = self.state.pos;
                 if let Some(on_select) = self.on_select.as_mut() {
                     on_select(self.state.pos);
                 }
