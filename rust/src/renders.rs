@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
 use three_d::{
-    radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer, degrees,
+    degrees, radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
+    RenderTarget, Vec3, VertexBuffer,
 };
 
 use crate::{

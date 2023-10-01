@@ -6,38 +6,19 @@
     // import Big from './Big.svelte';
     import Center from './Center.svelte';
     import Colorpicker from './Colorpicker.svelte';
-    // import { greet } from "wasm3d";
+    import init from '$lib/rust/rust';
 
-    // greet("name");
-    // console.log(new_canvas("string"));
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let space = "cylindrical";
-    let color = spring([0.0, 0.0, 0.0])
-    let style: string;
-    $: $color = [r, g, b]
-    $: {
-        style = sx({bg: $color});
-        // console.log(style);
-    }
-    $: {
-        console.log(space)
-    }
+    let wasm = init();
 </script>
 
 <div id="main">
-    <!-- Loading -->
-    <Center>
-        <!-- <Colorpicker /> -->
-        <div class="w-96 h-96">
-            <Canvas bind:r={r} bind:g={g} bind:b={b} bind:space={space}/>
-        </div>
-        <button on:click={()=>{
-            space = "linear"
-            console.log("AA", space)
-        }}>BUTTON</button>
-    </Center>
+    {#await wasm}
+        Loading
+    {:then _}
+        <Center>
+            <Colorpicker />
+        </Center>
+    {/await}
 </div>
 
 <style>

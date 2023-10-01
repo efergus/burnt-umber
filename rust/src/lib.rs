@@ -2,8 +2,11 @@ extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
 
+use std::f32::consts::PI;
+
 use renders::{AxisInput, ColorSpace, Cursor};
 use winit::window::WindowBuilder;
+pub mod color;
 mod geometry;
 mod renders;
 
@@ -15,8 +18,10 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 
-use crate::renders::{InputState, Renderable, Renderer, Space};
-// use
+use crate::{
+    color::{hsv, RGB},
+    renders::{InputState, Renderable, Renderer, Space},
+};
 
 #[wasm_bindgen]
 extern "C" {
@@ -31,6 +36,10 @@ fn to_cylindrical(v: Vec3) -> Vec3 {
     let radius = vec2(v.x, v.z).magnitude();
     let y = v.y;
     vec3(angle, y, radius)
+}
+
+fn to_unit_cylindrical(v: Vec3) -> Vec3 {
+    vec3((v.x / PI / 2.0).rem_euclid(1.0), v.y, v.z)
 }
 
 fn from_cylindrical(v: Vec3) -> Vec3 {
@@ -165,7 +174,7 @@ pub struct ColorView {
     linear_scene: ColorScene,
     pos_texture: Texture2D,
     depth_texture: DepthTexture2D,
-    on_select: Option<Box<dyn FnMut(Vec3) -> ()>>,
+    on_select: Option<Box<dyn FnMut(Vec3)>>,
     // on_hover: Option<Box<dyn FnMut(f32, f32, f32) -> ()>>,
 }
 
@@ -186,11 +195,16 @@ impl ColorView {
             .with_title("winit window")
             .with_min_inner_size(winit::dpi::LogicalSize::new(width, height))
             .with_maximized(true);
-        ColorView::build(window_builder, width, height)
+        ColorView::build(window_builder, width, height, None)
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn new(canvas: HtmlCanvasElement, width: u32, height: u32) -> Self {
+    pub fn new(
+        canvas: HtmlCanvasElement,
+        width: u32,
+        height: u32,
+        callback: js_sys::Function,
+    ) -> Self {
         let window_builder = match canvas.dyn_into::<HtmlCanvasElement>() {
             Ok(canvas) => {
                 use winit::platform::web::WindowBuilderExtWebSys;
@@ -200,10 +214,25 @@ impl ColorView {
             }
             _ => panic!("ColorView::new must be passed a canvas!"),
         };
-        ColorView::build(window_builder, width, height)
+        let f: Box<dyn FnMut(Vec3)> = Box::new(move |v: Vec3| {
+            let this = JsValue::null();
+            let _ = callback.call3(
+                &this,
+                &JsValue::from(v.x),
+                &JsValue::from(v.y),
+                &JsValue::from(v.z),
+            );
+        });
+        let on_select = Some(f);
+        ColorView::build(window_builder, width, height, on_select)
     }
 
-    fn build(window_builder: WindowBuilder, width: u32, height: u32) -> ColorView {
+    fn build(
+        window_builder: WindowBuilder,
+        width: u32,
+        height: u32,
+        on_select: Option<Box<dyn FnMut(Vec3)>>,
+    ) -> ColorView {
         let event_loop = winit::event_loop::EventLoop::new();
         let winit_window = window_builder.build(&event_loop).unwrap();
         let window =
@@ -225,6 +254,8 @@ impl ColorView {
 
         let cylindrical_program =
             color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+        // let cylindrical_program =
+        //     color_program(&context, "color = vec4(oklab_to_linear_srgb(pos.yxz), 1.0);");
         let linear_program = color_program(&context, "color = vec4(pos.xyz, 1.0);");
         let pos_program = color_program(&context, "color = vec4(pos.xyz, tag);");
         let pos_texture = Texture2D::new_empty::<[f32; 4]>(
@@ -250,9 +281,9 @@ impl ColorView {
             height,
             control,
             position: vec2(0.0, 0.0),
-            on_select: None,
+            on_select,
             // on_hover: None,
-            state: InputState::new(vec3(1.0, 1.0, 1.0), camera, Space::Linear),
+            state: InputState::new(vec3(1.0, 1.0, 1.0), camera, Space::Cylindrical),
             cylindrical_program,
             linear_program,
             pos_program,
@@ -320,7 +351,7 @@ impl ColorView {
             if self.state.space == Space::Cylindrical {
                 pos = to_cylindrical(pos);
                 pos_state = self.state.cylindrical;
-                saved = self.state.saved_pos;
+                saved = self.state.saved_cylindrical;
             }
             let pos = match tag {
                 1 => vec3(pos.x, pos_state.y, pos_state.z),
@@ -346,8 +377,16 @@ impl ColorView {
             if press {
                 self.state.saved_cylindrical = self.state.cylindrical;
                 self.state.saved_pos = self.state.pos;
+            }
+            if pos != pos_state {
                 if let Some(on_select) = self.on_select.as_mut() {
-                    on_select(self.state.pos);
+                    if self.state.space == Space::Cylindrical {
+                        let h = to_unit_cylindrical(self.state.cylindrical);
+                        let rgb = RGB::from(hsv(h.x, h.z, h.y));
+                        on_select(Vec3::from(rgb));
+                    } else {
+                        on_select(self.state.pos);
+                    }
                 }
             }
             FrameOutput::default()

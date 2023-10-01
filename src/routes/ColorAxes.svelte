@@ -40,7 +40,7 @@
         x = savedX;
         y = savedY;
     };
-    
+
     const style = sx({ bg: 0.5, w: '100%', h: '100%', pos: 'relative' });
 </script>
 
@@ -59,7 +59,17 @@
     }}
     on:blur={revert}
 >
-    <Canvas/>
-    <Cursor color={[1, 0, 1]} {axes} x={axes.x ? x * (rect?.width ?? 0) : 0} y={axes.y ? y * (rect?.height ?? 0) : 0}/>
-    <Cursor color={[0, 1, 0]} {axes} x={axes.x ? savedX * (rect?.width ?? 0) : 0} y={axes.y ? savedY * (rect?.height ?? 0) : 0}/>
+    <Canvas />
+    <Cursor
+        color={[1, 0, 1]}
+        {axes}
+        x={axes.x ? x * (rect?.width ?? 0) : 0}
+        y={axes.y ? y * (rect?.height ?? 0) : 0}
+    />
+    <Cursor
+        color={[0, 1, 0]}
+        {axes}
+        x={axes.x ? savedX * (rect?.width ?? 0) : 0}
+        y={axes.y ? savedY * (rect?.height ?? 0) : 0}
+    />
 </div>
