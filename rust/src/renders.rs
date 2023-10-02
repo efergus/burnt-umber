@@ -120,9 +120,9 @@ impl Renderable<InputState> for AxisInput {
                         Mat4::from_translation(vec3(0.0, pos.y, 0.0))
                             * Mat4::from_angle_y(radians(-camera_angle + PI))
                             * Mat4::from_nonuniform_scale(
-                                state.cylindrical.y,
+                                state.cylindrical.z,
                                 0.0,
-                                state.cylindrical.y,
+                                state.cylindrical.z,
                             )
                     }
                     Space::Linear => {

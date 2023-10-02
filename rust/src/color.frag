@@ -51,14 +51,48 @@ vec3 srgb_from_linear_srgb(vec3 rgb) {
     return mix(lo, hi, select);
 }
 
+float max3 (vec3 v) {
+  return max (max (v.x, v.y), v.z);
+}
+
+// vec3 oklab_to_ciexyz(vec3 oklab) {
+//     mat3 m1 = mat3(
+//         0.8189330101, 0.3618667424, -0.1288597137,
+//         0.0329845436, 0.9293118715, 0.0361456387,
+//         0.0482003018, 0.2643662691, 0.6338517070
+//     );
+//     mat3 m2 = mat3(
+//         0.
+//     );
+// }
+
 vec3 oklab_to_linear_srgb(vec3 oklab) {
     vec3 lms = vec3(oklab.x + 0.3963377774 * oklab.y + 0.2158037573 * oklab.z,
                     oklab.x - 0.1055613458 * oklab.y - 0.0638541728 * oklab.z,
                     oklab.x - 0.0894841775 * oklab.y - 1.2914855480 * oklab.z);
-    lms = pow(lms, vec3(3.0, 3.0, 3.0));
-    return vec3(4.0767416621 * lms.x - 3.3077115913 * lms.y + 0.2309699292 * lms.z,
+    lms = pow(lms, vec3(3.0));
+    vec3 rgb = vec3(4.0767416621 * lms.x - 3.3077115913 * lms.y + 0.2309699292 * lms.z,
                 -1.2684380046 * lms.x + 2.6097574011 * lms.y - 0.3413193965 * lms.z,
                 -0.0041960863 * lms.x - 0.7034186147 * lms.y + 1.7076147010 * lms.z);
+    // float inside = step(max3(rgb), 1.1);
+    // return rgb * inside * vec3(0.0, 1.0, 1.0);
+    return rgb;
+}
+
+vec3 linear_srgb_to_oklab(vec3 rgb) {
+    vec3 lms = vec3(0.4121656120 * rgb.x + 0.5362752080 * rgb.y + 0.0514575653 * rgb.z,
+                    0.2118591070 * rgb.x + 0.6807189584 * rgb.y + 0.1074065790 * rgb.z,
+                    0.0883097947 * rgb.x + 0.2818474174 * rgb.y + 0.6302613616 * rgb.z);
+    lms = pow(lms, vec3(1.0/3.0, 1.0/3.0, 1.0/3.0));
+    vec3 oklab = vec3(0.2104542553 * lms.x + 0.7936177850 * lms.y - 0.0040720468 * lms.z,
+                    1.9779984951 * lms.x - 2.4285922050 * lms.y + 0.4505937099 * lms.z,
+                    0.0259040371 * lms.x + 0.7827717662 * lms.y - 0.8086757660 * lms.z);
+    // vec3 outside = 1.0-step(vec3(1.0, 1.0, 1.0), oklab);
+    return oklab;
+}
+
+vec3 oklab_to_srgb(vec3 oklab) {
+    return linear_srgb_to_oklab(oklab_to_linear_srgb(oklab));
 }
 
 // vec3 oklab_to_linear_srgb(vec3 oklab) {

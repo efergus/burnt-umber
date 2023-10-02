@@ -18,8 +18,8 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 
-use crate::{
-    color::{hsv, RGB},
+pub use crate::{
+    color::web::{hsv, RGB},
     renders::{InputState, Renderable, Renderer, Space},
 };
 
@@ -252,10 +252,12 @@ impl ColorView {
         );
         let control = CustomController::new(*camera.target(), 1.0, 100.0);
 
-        let cylindrical_program =
-            color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
         // let cylindrical_program =
-        //     color_program(&context, "color = vec4(oklab_to_linear_srgb(pos.yxz), 1.0);");
+        //     color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
+        let cylindrical_program =
+        color_program(&context, "color = vec4(oklab_to_srgb(pos.yxz), 1.0);");
+        // let cylindrical_program =
+        //     color_program(&context, "color = vec4(linear_srgb_to_oklab(pos.yxz), 1.0);");
         let linear_program = color_program(&context, "color = vec4(pos.xyz, 1.0);");
         let pos_program = color_program(&context, "color = vec4(pos.xyz, tag);");
         let pos_texture = Texture2D::new_empty::<[f32; 4]>(
@@ -381,6 +383,7 @@ impl ColorView {
             if pos != pos_state {
                 if let Some(on_select) = self.on_select.as_mut() {
                     if self.state.space == Space::Cylindrical {
+                        log(&format!("{:?} {:?}", self.state.pos, self.state.cylindrical));
                         let h = to_unit_cylindrical(self.state.cylindrical);
                         let rgb = RGB::from(hsv(h.x, h.z, h.y));
                         on_select(Vec3::from(rgb));
