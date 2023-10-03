@@ -40,7 +40,7 @@ vec3 apx_srgb_from_linear_srgb(vec3 rgb) {
     return pow(rgb, ginv);
 }
 
-vec3 srgb_from_linear_srgb(vec3 rgb) {
+vec3 linear_srgb_to_srgb(vec3 rgb) {
     vec3 a = vec3(0.055, 0.055, 0.055);
     vec3 ap1 = vec3(1.0, 1.0, 1.0) + a;
     vec3 g = vec3(2.4, 2.4, 2.4);
@@ -55,6 +55,10 @@ float max3 (vec3 v) {
   return max (max (v.x, v.y), v.z);
 }
 
+float min3 (vec3 v) {
+  return min (min (v.x, v.y), v.z);
+}
+
 // vec3 oklab_to_ciexyz(vec3 oklab) {
 //     mat3 m1 = mat3(
 //         0.8189330101, 0.3618667424, -0.1288597137,
@@ -66,16 +70,23 @@ float max3 (vec3 v) {
 //     );
 // }
 
-vec3 oklab_to_linear_srgb(vec3 oklab) {
-    vec3 lms = vec3(oklab.x + 0.3963377774 * oklab.y + 0.2158037573 * oklab.z,
-                    oklab.x - 0.1055613458 * oklab.y - 0.0638541728 * oklab.z,
-                    oklab.x - 0.0894841775 * oklab.y - 1.2914855480 * oklab.z);
+vec3 mark_out_of_gamut(vec3 rgb) {
+    float mn = min3(rgb);
+    float mx = max3(rgb);
+    float below = 1.0 - smoothstep(-0.01, 0.0, mn);
+    float above = smoothstep(1.0, 1.01, mx);
+    float outside = max(below, above);
+    return mix(rgb, vec3(0.5, 0.0, 0.5), outside);
+}
+
+vec3 oklab_to_linear_srgb(vec3 lab) {
+    vec3 lms = vec3(lab.x + 0.3963377774 * lab.y + 0.2158037573 * lab.z,
+                    lab.x - 0.1055613458 * lab.y - 0.0638541728 * lab.z,
+                    lab.x - 0.0894841775 * lab.y - 1.2914855480 * lab.z);
     lms = pow(lms, vec3(3.0));
     vec3 rgb = vec3(4.0767416621 * lms.x - 3.3077115913 * lms.y + 0.2309699292 * lms.z,
                 -1.2684380046 * lms.x + 2.6097574011 * lms.y - 0.3413193965 * lms.z,
                 -0.0041960863 * lms.x - 0.7034186147 * lms.y + 1.7076147010 * lms.z);
-    // float inside = step(max3(rgb), 1.1);
-    // return rgb * inside * vec3(0.0, 1.0, 1.0);
     return rgb;
 }
 
@@ -92,7 +103,7 @@ vec3 linear_srgb_to_oklab(vec3 rgb) {
 }
 
 vec3 oklab_to_srgb(vec3 oklab) {
-    return linear_srgb_to_oklab(oklab_to_linear_srgb(oklab));
+    return linear_srgb_to_srgb(mark_out_of_gamut(oklab_to_linear_srgb(oklab)));
 }
 
 // vec3 oklab_to_linear_srgb(vec3 oklab) {

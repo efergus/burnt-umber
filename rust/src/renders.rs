@@ -216,7 +216,7 @@ impl Renderable<InputState> for ColorSpace {
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
             model,
-            meta: model,
+            meta: Mat4::from_nonuniform_scale(0.4, 1.0, 0.4) * model,
         }
     }
 }
