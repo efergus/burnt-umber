@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use three_d::{
     degrees, radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer,
+    RenderTarget, Vec3, VertexBuffer, SquareMatrix,
 };
 
 use crate::{
@@ -178,6 +178,34 @@ impl Renderable<InputState> for AxisInput {
             view,
             model,
             meta,
+        }
+    }
+}
+
+pub struct ColorChip {
+    positions: VertexBuffer,    
+}
+
+
+impl ColorChip {
+    pub fn new(context: &Context) -> Self {
+        ColorChip {
+            positions: VertexBuffer::new_with_data(context, &quad_mesh()),
+        }
+    }
+}
+
+impl Renderable<InputState> for ColorChip {
+    fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
+        let pos = state.pos;
+        Model {
+            positions: &self.positions,
+            embed: &self.positions,
+            render_states: RenderStates::default(),
+            tag: 7,
+            view: Mat4::identity(),
+            model: Mat4::from_translation(vec3(0.8, 0.8, 0.0)) * Mat4::from_scale(0.2),
+            meta: Mat4::from_translation(pos) * Mat4::from_scale(0.0),
         }
     }
 }

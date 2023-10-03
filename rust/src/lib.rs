@@ -4,7 +4,7 @@ extern crate web_sys;
 
 use std::f32::consts::PI;
 
-use renders::{AxisInput, ColorSpace, Cursor};
+use renders::{AxisInput, ColorSpace, Cursor, ColorChip};
 use winit::window::WindowBuilder;
 pub mod color;
 mod geometry;
@@ -116,6 +116,7 @@ struct ColorScene {
     cursor: Cursor,
     space: ColorSpace,
     axes: [AxisInput; 3],
+    chip: ColorChip,
 }
 
 impl ColorScene {
@@ -128,6 +129,7 @@ impl ColorScene {
                 AxisInput::new(&context, 1),
                 AxisInput::new(&context, 2),
             ],
+            chip: ColorChip::new(&context),
         }
     }
 
@@ -149,6 +151,7 @@ impl Scene<&InputState> for ColorScene {
         for i in 0..3 {
             target.program.render(screen, &self.axes[i].model(state));
         }
+        target.program.render(screen, &self.chip.model(state));
         let screen = target.pos_target;
         target.pos_program.render(screen, space);
         for i in 0..3 {
