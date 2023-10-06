@@ -171,3 +171,11 @@ pub fn subdivide(mesh: &[Vec3]) -> Vec<Vec3> {
     }
     new_mesh
 }
+
+pub fn subdivide_n(mesh: &[Vec3], n: u32) -> Vec<Vec3> {
+    let mut mesh = mesh.to_vec();
+    for _ in 0..n {
+        mesh = subdivide(&mesh);
+    }
+    mesh
+}

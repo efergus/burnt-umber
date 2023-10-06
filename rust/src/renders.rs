@@ -3,13 +3,45 @@ use std::f32::consts::PI;
 use palette::{okhsv, Oklab, FromColor, oklab, LinSrgb};
 use three_d::{
     degrees, radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer, SquareMatrix, vec2, InnerSpace,
+    RenderTarget, Vec3, VertexBuffer, SquareMatrix, vec2, InnerSpace, ElementBuffer,
 };
 
 use crate::{
-    geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh, subdivide},
+    geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh, subdivide, subdivide_n},
     to_cylindrical,
 };
+
+pub struct Mesh {
+    pub cpu_positions: Vec<Vec3>,
+    pub cpu_indices: Option<Vec<u32>>,
+    pub positions: VertexBuffer,
+    pub indices: ElementBuffer,
+}
+
+impl Mesh {
+    pub fn new(context: &Context, cpu_positions: Vec<Vec3>, cpu_indices: Option<Vec<u32>>) -> Self {
+        let positions = VertexBuffer::new_with_data(context, &cpu_positions);
+        let indices = match &cpu_indices {
+            Some(cpu_indices) => ElementBuffer::new_with_data(context, &cpu_indices),
+            None => ElementBuffer::new_with_data(context, &Vec::from_iter(0..cpu_positions.len() as u32)),
+        };
+        Mesh {
+            cpu_positions,
+            cpu_indices,
+            positions,
+            indices,
+        }
+    }
+
+    pub fn embed<T: Fn(&Vec3) -> Vec3>(&mut self, embedding: T) {
+        let cpu_positions: Vec<Vec3> = self
+            .cpu_positions
+            .iter()
+            .map(|pos| embedding(pos))
+            .collect();
+        self.positions.fill(&cpu_positions);
+    }
+}
 
 pub struct Model<'a> {
     positions: &'a VertexBuffer,
@@ -36,7 +68,6 @@ impl Renderer for Program {
             self.use_uniform("model", model.model);
             self.use_uniform("meta", model.meta);
             self.use_uniform_if_required("tag", model.tag as f32);
-            assert!(model.positions.vertex_count() == model.embed.vertex_count());
             self.use_vertex_attribute("position", model.positions);
             self.use_vertex_attribute("embed", model.embed);
             self.draw_arrays(
@@ -211,42 +242,46 @@ impl Renderable<InputState> for ColorChip {
     }
 }
 
-fn okhsv_embed(mesh: &[Vec3]) -> Vec<Vec3>{
-    mesh
-        .iter()
-        .map(|pos| {
-            let flat = vec2(pos.x, pos.z);
-            let angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
-            let hsv = okhsv::Okhsv::new(angle * 360.0, flat.magnitude(), pos.y);
-            let oklab = Oklab::from_color(hsv);
-            let rgb = LinSrgb::from_color(oklab);
-            vec3(rgb.red, rgb.green, rgb.blue)
-        })
-        .collect()
+fn okhsv_embed(pos: Vec3) -> Vec3{
+    let flat = vec2(pos.x, pos.z);
+    let angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
+    let hsv = okhsv::Okhsv::new(angle * 360.0, flat.magnitude(), pos.y);
+    let oklab = Oklab::from_color(hsv);
+    let rgb = LinSrgb::from_color(oklab);
+    vec3(rgb.red, rgb.green, rgb.blue)
+}
+
+fn siny_embed(pos: Vec3) -> Vec3{
+    vec3(pos.x, (pos.y*PI).sin(), pos.z)
 }
 
 pub struct ColorSpace {
     positions: VertexBuffer,
-    embedding: VertexBuffer,
+    embedding: Mesh,
 }
 
 impl ColorSpace {
     pub fn cylinder(context: &Context) -> Self {
         let m = cylinder_mesh(64);
-        let m = subdivide(&m);
-        let m = subdivide(&m);
-        let embedding = okhsv_embed(&m);
+        let m = subdivide_n(&m, 4);
 
         ColorSpace {
             positions: VertexBuffer::new_with_data(context, &m),
-            embedding: VertexBuffer::new_with_data(context, &embedding),
+            embedding: Mesh::new(context, m, None),
         }
     }
     pub fn cube(context: &Context) -> Self {
         ColorSpace {
             positions: VertexBuffer::new_with_data(context, &cube_mesh()),
-            embedding: VertexBuffer::new_with_data(context, &cube_mesh()),
+            embedding: Mesh::new(context, cube_mesh(), None),
         }
+    }
+}
+
+impl ColorSpace {
+    pub fn okhsv_embed(&mut self, chunk: Vec3) {
+        use cgmath::ElementWise;
+        self.embedding.embed(|pos| okhsv_embed(pos.mul_element_wise(chunk)));
     }
 }
 
@@ -262,12 +297,12 @@ impl Renderable<InputState> for ColorSpace {
         };
         Model {
             positions: &self.positions,
-            embed: &self.embedding,
+            embed: &self.embedding.positions,
             render_states: RenderStates::default(),
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
             model,
-            meta: model,
+            meta: Mat4::identity(),
         }
     }
 }
@@ -297,7 +332,7 @@ impl Renderable<InputState> for Cursor {
             },
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
-            model: Mat4::from_translation(state.pos) * Mat4::from_scale(0.05),
+            model: Mat4::from_translation(okhsv_embed(state.pos)) * Mat4::from_scale(0.05),
             meta: Mat4::from_scale(0.0),
         }
     }

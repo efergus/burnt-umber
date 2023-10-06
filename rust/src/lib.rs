@@ -109,6 +109,7 @@ struct Target<'a> {
 }
 
 trait Scene<T> {
+    fn update(&mut self, state: T);
     fn render(&self, target: &mut Target, state: T);
 }
 
@@ -143,6 +144,9 @@ impl ColorScene {
 }
 
 impl Scene<&InputState> for ColorScene {
+    fn update(&mut self, state: &InputState) {
+        self.space.okhsv_embed(state.chunk);
+    }
     fn render(&self, target: &mut Target, state: &InputState) {
         let space = &self.space.model(state);
         let screen = target.target;
@@ -324,17 +328,17 @@ impl ColorView {
             self.control
                 .handle_events(&mut self.state.camera, &mut input.events);
             let screen = input.screen();
-            let state = &self.state;
+            let state = &mut self.state;
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),
                 self.depth_texture.as_depth_target(),
             );
             pos_target.clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0));
-            let (program, scene) = if self.state.space == Space::Linear {
-                (&mut self.linear_program, &self.linear_scene)
+            let (program, scene) = if state.space == Space::Linear {
+                (&mut self.linear_program, &mut self.linear_scene)
             } else {
-                (&mut self.cylindrical_program, &self.cylindrical_scene)
+                (&mut self.cylindrical_program, &mut self.cylindrical_scene)
             };
             let mut target = Target {
                 target: &screen,
@@ -353,12 +357,12 @@ impl ColorView {
             let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
             let tag = pos[3] as u8;
             let mut pos = vec3(pos[0], pos[1], pos[2]);
-            let mut pos_state = self.state.pos;
-            let mut saved = self.state.saved_pos;
-            if self.state.space == Space::Cylindrical {
+            let mut pos_state = state.pos;
+            let mut saved = state.saved_pos;
+            if state.space == Space::Cylindrical {
                 pos = to_cylindrical(pos);
-                pos_state = self.state.cylindrical;
-                saved = self.state.saved_cylindrical;
+                pos_state = state.cylindrical;
+                saved = state.saved_cylindrical;
             }
             let pos = match tag {
                 1 => vec3(pos.x, pos_state.y, pos_state.z),
@@ -367,35 +371,36 @@ impl ColorView {
                 7 => pos,
                 _ => saved,
             };
-            self.state.chunk = match tag {
-                1 => vec3(pos.x, self.state.chunk.y, self.state.chunk.z),
-                2 => vec3(self.state.chunk.x, pos.y, self.state.chunk.z),
-                3 => vec3(self.state.chunk.x, self.state.chunk.y, pos.z),
-                _ => self.state.chunk,
+            state.chunk = match tag {
+                1 => vec3(pos.x, state.chunk.y, state.chunk.z),
+                2 => vec3(state.chunk.x, pos.y, state.chunk.z),
+                3 => vec3(state.chunk.x, state.chunk.y, pos.z),
+                _ => state.chunk,
             };
             // log(&format!("{:?} {:?}", self.state.chunk, pos));
-            if self.state.space == Space::Cylindrical {
-                self.state.cylindrical = pos;
-                self.state.pos = from_cylindrical(pos);
+            if state.space == Space::Cylindrical {
+                state.cylindrical = pos;
+                state.pos = from_cylindrical(pos);
             } else {
-                self.state.cylindrical = to_cylindrical(pos);
-                self.state.pos = pos;
+                state.cylindrical = to_cylindrical(pos);
+                state.pos = pos;
             }
             if press {
-                self.state.saved_cylindrical = self.state.cylindrical;
-                self.state.saved_pos = self.state.pos;
+                state.saved_cylindrical = state.cylindrical;
+                state.saved_pos = state.pos;
             }
             if pos != pos_state {
                 if let Some(on_select) = self.on_select.as_mut() {
-                    if self.state.space == Space::Cylindrical {
-                        log(&format!("{:?} {:?}", self.state.pos, self.state.cylindrical));
-                        let h = to_unit_cylindrical(self.state.cylindrical);
+                    if state.space == Space::Cylindrical {
+                        log(&format!("{:?} {:?}", state.pos, state.cylindrical));
+                        let h = to_unit_cylindrical(state.cylindrical);
                         let rgb = RGB::from(hsv(h.x, h.z, h.y));
                         on_select(Vec3::from(rgb));
                     } else {
-                        on_select(self.state.pos);
+                        on_select(state.pos);
                     }
                 }
+                scene.update(state);
             }
             FrameOutput::default()
         });

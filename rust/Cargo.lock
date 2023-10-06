@@ -901,6 +901,7 @@ dependencies = [
 name = "rust"
 version = "0.1.0"
 dependencies = [
+ "cgmath",
  "console_error_panic_hook",
  "derive_more",
  "is_close",

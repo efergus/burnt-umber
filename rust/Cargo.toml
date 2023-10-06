@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 target = "wasm32-unknown-unknown"
 
 [dependencies]
+cgmath = "0.18.0"
 console_error_panic_hook = "0.1.7"
 derive_more = "0.99.17"
 is_close = "0.1.3"
