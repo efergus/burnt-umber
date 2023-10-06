@@ -1,12 +1,13 @@
 use std::f32::consts::PI;
 
+use palette::{okhsv, Oklab, FromColor, oklab, LinSrgb};
 use three_d::{
     degrees, radians, vec3, Camera, Context, CpuMesh, Cull, DepthTest, Mat4, Program, RenderStates,
-    RenderTarget, Vec3, VertexBuffer, SquareMatrix,
+    RenderTarget, Vec3, VertexBuffer, SquareMatrix, vec2, InnerSpace,
 };
 
 use crate::{
-    geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh},
+    geometry::{cube_mesh, cylinder_mesh, quad_mesh, tube_mesh, unwrap_mesh, subdivide},
     to_cylindrical,
 };
 
@@ -210,19 +211,41 @@ impl Renderable<InputState> for ColorChip {
     }
 }
 
+fn okhsv_embed(mesh: &[Vec3]) -> Vec<Vec3>{
+    mesh
+        .iter()
+        .map(|pos| {
+            let flat = vec2(pos.x, pos.z);
+            let angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
+            let hsv = okhsv::Okhsv::new(angle * 360.0, flat.magnitude(), pos.y);
+            let oklab = Oklab::from_color(hsv);
+            let rgb = LinSrgb::from_color(oklab);
+            vec3(rgb.red, rgb.green, rgb.blue)
+        })
+        .collect()
+}
+
 pub struct ColorSpace {
     positions: VertexBuffer,
+    embedding: VertexBuffer,
 }
 
 impl ColorSpace {
     pub fn cylinder(context: &Context) -> Self {
+        let m = cylinder_mesh(64);
+        let m = subdivide(&m);
+        let m = subdivide(&m);
+        let embedding = okhsv_embed(&m);
+
         ColorSpace {
-            positions: VertexBuffer::new_with_data(context, &cylinder_mesh(64)),
+            positions: VertexBuffer::new_with_data(context, &m),
+            embedding: VertexBuffer::new_with_data(context, &embedding),
         }
     }
     pub fn cube(context: &Context) -> Self {
         ColorSpace {
             positions: VertexBuffer::new_with_data(context, &cube_mesh()),
+            embedding: VertexBuffer::new_with_data(context, &cube_mesh()),
         }
     }
 }
@@ -239,12 +262,12 @@ impl Renderable<InputState> for ColorSpace {
         };
         Model {
             positions: &self.positions,
-            embed: &self.positions,
+            embed: &self.embedding,
             render_states: RenderStates::default(),
             tag: 7,
             view: state.camera.projection() * state.camera.view(),
             model,
-            meta: Mat4::from_nonuniform_scale(0.4, 1.0, 0.4) * model,
+            meta: model,
         }
     }
 }

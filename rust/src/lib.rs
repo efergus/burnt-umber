@@ -257,10 +257,12 @@ impl ColorView {
 
         // let cylindrical_program =
         //     color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
-        let cylindrical_program =
-        color_program(&context, "color = vec4(oklab_to_srgb(pos.yxz), 1.0);");
+        // let cylindrical_program =
+        // color_program(&context, "color = vec4(oklab_to_srgb(pos.yxz), 1.0);");
         // let cylindrical_program =
         //     color_program(&context, "color = vec4(linear_srgb_to_oklab(pos.yxz), 1.0);");
+        let cylindrical_program = color_program(&context, "color = vec4(linear_srgb_to_srgb(pos.xyz), 1.0);");
+
         let linear_program = color_program(&context, "color = vec4(pos.xyz, 1.0);");
         let pos_program = color_program(&context, "color = vec4(pos.xyz, tag);");
         let pos_texture = Texture2D::new_empty::<[f32; 4]>(

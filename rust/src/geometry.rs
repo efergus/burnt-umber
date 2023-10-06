@@ -157,3 +157,17 @@ pub fn cube_mesh() -> Vec<Vec3> {
 // fn sphere(subdivisions: u32) -> Vec<Vec3> {
 
 // }
+
+pub fn subdivide(mesh: &[Vec3]) -> Vec<Vec3> {
+    let mut new_mesh: Vec<Vec3> = Vec::new();
+    for i in 0..mesh.len() / 3 {
+        let a = mesh[i * 3];
+        let b = mesh[i * 3 + 1];
+        let c = mesh[i * 3 + 2];
+        let ab = (a + b) / 2.0;
+        let bc = (b + c) / 2.0;
+        let ca = (c + a) / 2.0;
+        new_mesh.extend(&[a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca]);
+    }
+    new_mesh
+}
