@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { sx } from '$lib/classes';
-    import { spring } from 'svelte/motion';
     import '../app.css';
     import Canvas from './Canvas.svelte';
     // import Big from './Big.svelte';
@@ -26,6 +24,5 @@
         position: absolute;
         width: 100vw;
         height: 100vh;
-        /* background-color: blueviolet; */
     }
 </style>
