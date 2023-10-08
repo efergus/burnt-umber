@@ -1,7 +1,5 @@
 use three_d::{degrees, vec2, vec3, Angle, Vec2, Vec3};
 
-use crate::log;
-
 fn polar(turn: f32) -> Vec2 {
     let angle = degrees(turn * 360.0);
     vec2(angle.cos(), angle.sin())
@@ -26,7 +24,8 @@ pub fn polar_generator<F: Fn(Vec2, Vec2) -> Vec<Vec3>>(
 }
 
 pub fn unwrap_mesh(mesh: &Vec<Vec3>) -> Vec<Vec3> {
-    let mut mesh: Vec<Vec3> = mesh.iter()
+    let mut mesh: Vec<Vec3> = mesh
+        .iter()
         .map(|pos| {
             let flat = vec2(pos.x, pos.z);
             let angle = -flat.y.atan2(flat.x) / std::f32::consts::PI / 2.0;
@@ -36,7 +35,7 @@ pub fn unwrap_mesh(mesh: &Vec<Vec3>) -> Vec<Vec3> {
     let angle = mesh[0].x;
     let mut latest = angle;
     for vec in mesh.iter_mut() {
-        vec.x = vec.x-angle;
+        vec.x = vec.x - angle;
         if latest - vec.x > 0.4 {
             vec.x += 1.0;
         }
@@ -62,7 +61,7 @@ pub fn tube_mesh(subdivisions: u32) -> Vec<Vec3> {
     })
 }
 
-pub fn cylinder_mesh(subdivisions: u32) -> Vec<Vec3> {
+pub fn _cylinder_mesh(subdivisions: u32) -> Vec<Vec3> {
     polar_generator(subdivisions, 0.0, 1.0, |left, right| {
         let top = vec3(0.0, 1.0, 0.0);
         let left_top = vec3(left.x, 1.0, left.y);
@@ -108,6 +107,26 @@ pub fn quad_mesh() -> Vec<Vec3> {
     ];
 }
 
-// fn sphere(subdivisions: u32) -> Vec<Vec3> {
-
-// }
+pub fn _nonuniform_subdivided_quad_mesh(
+    horizontal_subdivisions: u32,
+    vertical_subdivisions: u32,
+) -> Vec<Vec3> {
+    let mut mesh: Vec<Vec3> = Vec::new();
+    for i in 0..horizontal_subdivisions {
+        let left = i as f32 / horizontal_subdivisions as f32;
+        let right = (i + 1) as f32 / horizontal_subdivisions as f32;
+        for j in 0..vertical_subdivisions {
+            let top = j as f32 / vertical_subdivisions as f32;
+            let bottom = (j + 1) as f32 / vertical_subdivisions as f32;
+            mesh.extend(&[
+                vec3(left, top, 0.0),
+                vec3(right, bottom, 0.0),
+                vec3(left, bottom, 0.0),
+                vec3(left, top, 0.0),
+                vec3(right, top, 0.0),
+                vec3(right, bottom, 0.0),
+            ]);
+        }
+    }
+    mesh
+}

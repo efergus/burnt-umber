@@ -1,38 +1,41 @@
 <script lang="ts">
     import { sx } from '$lib/classes';
     import { spring } from 'svelte/motion';
-    import ColorAxes from './ColorAxes.svelte';
-    import { srgb } from '$lib/color';
+    import '../app.css';
+    import Canvas from './Canvas.svelte';
+    // import Big from './Big.svelte';
+    import Center from './Center.svelte';
+    import Colorpicker from './Colorpicker.svelte';
+    import { onMount } from 'svelte';
+    // import { greet } from "wasm3d";
 
-    export let r = 0;
-    export let g = 0;
-    export let b = 0;
-    export let a = 1;
-    let saved = {r, g, b, a};
-    let coords = spring({ r, g, b, a }, { stiffness: 0.3, damping: 1 });
-    $: $coords = {r, g, b, a}
-
-    const style = sx({
-        display: 'grid',
-        columns: '4rem 1fr 4rem',
-        rows: '4rem 1fr 4rem',
-        gap: '0.5rem',
-        w: 400,
-        h: 400
-    });
+    // greet("name");
+    // console.log(new_canvas("string"));
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let hsv = '';
+    let space = 'cylindrical';
+    let color = spring([r, g, b]);
+    let style: string;
+    $: $color = [r, g, b];
+    $: {
+        style = sx({ bg: $color });
+    }
+    $: {
+        console.log(space);
+    }
 </script>
 
-<div {style}>
-    <!-- row 1 -->
-    <div style={sx({ bg: srgb([$coords.r, $coords.g, $coords.b, $coords.a]), w: '100%', h: '100%' })} />
-    <ColorAxes bind:x={g} bind:savedX={saved.g} axes={{ x: true }} />
-    <div />
-    <!-- row 2 -->
-    <ColorAxes bind:y={r} bind:savedY={saved.r} axes={{ y: true }} />
-    <ColorAxes bind:x={g} bind:y={r} bind:savedX={saved.g} bind:savedY={saved.r} />
-    <ColorAxes bind:y={b} bind:savedY={saved.b} axes={{ y: true }} />
-    <!-- row 3 -->
-    <div />
-    <ColorAxes bind:x={a} axes={{ x: true }} />
-    <div />
+<div class="flex flex-col justify-center">
+    <div class="w-96 h-96">
+        <Canvas bind:r bind:g bind:b bind:space />
+    </div>
+    <button
+        on:click={() => {
+            space = 'linear';
+            console.log('AA', space);
+        }}>BUTTON</button
+    >
+    <p {style}>rgb({r.toFixed(2)}, {g.toFixed(2)}, {b.toFixed(2)})</p>
 </div>
