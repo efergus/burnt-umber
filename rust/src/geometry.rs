@@ -61,7 +61,7 @@ pub fn tube_mesh(subdivisions: u32) -> Vec<Vec3> {
     })
 }
 
-pub fn cylinder_mesh(subdivisions: u32) -> Vec<Vec3> {
+pub fn _cylinder_mesh(subdivisions: u32) -> Vec<Vec3> {
     polar_generator(subdivisions, 0.0, 1.0, |left, right| {
         let top = vec3(0.0, 1.0, 0.0);
         let left_top = vec3(left.x, 1.0, left.y);
@@ -107,7 +107,7 @@ pub fn quad_mesh() -> Vec<Vec3> {
     ];
 }
 
-pub fn nonuniform_subdivided_quad_mesh(
+pub fn _nonuniform_subdivided_quad_mesh(
     horizontal_subdivisions: u32,
     vertical_subdivisions: u32,
 ) -> Vec<Vec3> {
@@ -127,79 +127,6 @@ pub fn nonuniform_subdivided_quad_mesh(
                 vec3(right, bottom, 0.0),
             ]);
         }
-    }
-    mesh
-}
-
-pub fn cube_mesh() -> Vec<Vec3> {
-    vec![
-        // Up
-        vec3(1.0, 1.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        vec3(1.0, 1.0, 1.0),
-        vec3(0.0, 1.0, 1.0),
-        vec3(1.0, 1.0, 1.0),
-        vec3(0.0, 1.0, 0.0),
-        // Down
-        vec3(0.0, 0.0, 0.0),
-        vec3(1.0, 0.0, 0.0),
-        vec3(1.0, 0.0, 1.0),
-        vec3(1.0, 0.0, 1.0),
-        vec3(0.0, 0.0, 1.0),
-        vec3(0.0, 0.0, 0.0),
-        // Back
-        vec3(1.0, 0.0, 0.0),
-        vec3(0.0, 0.0, 0.0),
-        vec3(1.0, 1.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        vec3(1.0, 1.0, 0.0),
-        vec3(0.0, 0.0, 0.0),
-        // Front
-        vec3(0.0, 0.0, 1.0),
-        vec3(1.0, 0.0, 1.0),
-        vec3(1.0, 1.0, 1.0),
-        vec3(1.0, 1.0, 1.0),
-        vec3(0.0, 1.0, 1.0),
-        vec3(0.0, 0.0, 1.0),
-        // Right
-        vec3(1.0, 0.0, 0.0),
-        vec3(1.0, 1.0, 0.0),
-        vec3(1.0, 1.0, 1.0),
-        vec3(1.0, 1.0, 1.0),
-        vec3(1.0, 0.0, 1.0),
-        vec3(1.0, 0.0, 0.0),
-        // Left
-        vec3(0.0, 1.0, 0.0),
-        vec3(0.0, 0.0, 0.0),
-        vec3(0.0, 1.0, 1.0),
-        vec3(0.0, 0.0, 1.0),
-        vec3(0.0, 1.0, 1.0),
-        vec3(0.0, 0.0, 0.0),
-    ]
-}
-
-// fn sphere(subdivisions: u32) -> Vec<Vec3> {
-
-// }
-
-pub fn subdivide(mesh: &[Vec3]) -> Vec<Vec3> {
-    let mut new_mesh: Vec<Vec3> = Vec::new();
-    for i in 0..mesh.len() / 3 {
-        let a = mesh[i * 3];
-        let b = mesh[i * 3 + 1];
-        let c = mesh[i * 3 + 2];
-        let ab = (a + b) / 2.0;
-        let bc = (b + c) / 2.0;
-        let ca = (c + a) / 2.0;
-        new_mesh.extend(&[a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca]);
-    }
-    new_mesh
-}
-
-pub fn subdivide_n(mesh: &[Vec3], n: u32) -> Vec<Vec3> {
-    let mut mesh = mesh.to_vec();
-    for _ in 0..n {
-        mesh = subdivide(&mesh);
     }
     mesh
 }

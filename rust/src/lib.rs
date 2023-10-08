@@ -5,7 +5,6 @@ extern crate web_sys;
 use std::f32::consts::PI;
 
 use camera::CustomController;
-use renders::{AxisInput, ColorChip, ColorSpace, Cursor};
 use scene::ColorScene;
 use winit::window::WindowBuilder;
 mod camera;
@@ -33,20 +32,10 @@ extern "C" {
     fn log(s: &str);
 }
 
-fn to_cylindrical(v: Vec3) -> Vec3 {
-    let angle = v.z.atan2(v.x);
-    let radius = vec2(v.x, v.z).magnitude();
-    let y = v.y;
-    vec3(angle, y, radius)
-}
-
-fn to_unit_cylindrical(v: Vec3) -> Vec3 {
-    vec3((v.x / PI / 2.0).rem_euclid(1.0), v.y, v.z)
-}
-
 fn from_cylindrical(v: Vec3) -> Vec3 {
-    let x = v.x.cos() * v.z;
-    let z = v.x.sin() * v.z;
+    let h = v.x * PI * 2.0;
+    let x = h.cos() * v.z;
+    let z = h.sin() * v.z;
     let y = v.y;
     vec3(x, y, z)
 }
@@ -60,10 +49,8 @@ pub struct ColorView {
     position: Vec2,
     state: InputState,
     cylindrical_program: Program,
-    linear_program: Program,
     pos_program: Program,
     cylindrical_scene: ColorScene,
-    linear_scene: ColorScene,
     pos_texture: Texture2D,
     depth_texture: DepthTexture2D,
     on_select: Option<Box<dyn FnMut(Vec3)>>,
@@ -97,6 +84,7 @@ impl ColorView {
         height: u32,
         callback: js_sys::Function,
     ) -> Self {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         let window_builder = match canvas.dyn_into::<HtmlCanvasElement>() {
             Ok(canvas) => {
                 use winit::platform::web::WindowBuilderExtWebSys;
@@ -152,7 +140,6 @@ impl ColorView {
         //     color_program(&context, "color = vec4(linear_srgb_to_oklab(pos.yxz), 1.0);");
         // let cylindrical_program = color_program(&context, "color = vec4(linear_srgb_to_srgb(pos.xyz), 1.0);");
 
-        let linear_program = color_program(&context, "color = vec4(pos.xyz, 1.0);");
         let pos_program = color_program(&context, "color = vec4(pos.xyz, tag);");
         let pos_texture = Texture2D::new_empty::<[f32; 4]>(
             &context,
@@ -184,10 +171,8 @@ impl ColorView {
             // on_hover: None,
             state,
             cylindrical_program,
-            linear_program,
             pos_program,
             cylindrical_scene,
-            linear_scene: ColorScene::cube(&context),
             pos_texture,
             depth_texture,
         };
@@ -259,8 +244,11 @@ impl ColorView {
                 3 => vec3(state.chunk.x, state.chunk.y, pos.z),
                 _ => state.chunk,
             };
-            
-            if pos != pos_state {
+
+            if press && tag > 0 {
+                state.saved_pos = pos;
+            }
+            if state.pos != pos_state {
                 if let Some(on_select) = self.on_select.as_mut() {
                     on_select(state.pos);
                 }

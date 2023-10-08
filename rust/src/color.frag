@@ -59,17 +59,6 @@ float min3 (vec3 v) {
   return min (min (v.x, v.y), v.z);
 }
 
-// vec3 oklab_to_ciexyz(vec3 oklab) {
-//     mat3 m1 = mat3(
-//         0.8189330101, 0.3618667424, -0.1288597137,
-//         0.0329845436, 0.9293118715, 0.0361456387,
-//         0.0482003018, 0.2643662691, 0.6338517070
-//     );
-//     mat3 m2 = mat3(
-//         0.
-//     );
-// }
-
 vec3 mark_out_of_gamut(vec3 rgb) {
     float mn = min3(rgb);
     float mx = max3(rgb);
@@ -98,7 +87,6 @@ vec3 linear_srgb_to_oklab(vec3 rgb) {
     vec3 oklab = vec3(0.2104542553 * lms.x + 0.7936177850 * lms.y - 0.0040720468 * lms.z,
                     1.9779984951 * lms.x - 2.4285922050 * lms.y + 0.4505937099 * lms.z,
                     0.0259040371 * lms.x + 0.7827717662 * lms.y - 0.8086757660 * lms.z);
-    // vec3 outside = 1.0-step(vec3(1.0, 1.0, 1.0), oklab);
     return oklab;
 }
 
