@@ -6,7 +6,6 @@
     // import Big from './Big.svelte';
     import Center from './Center.svelte';
     import Colorpicker from './Colorpicker.svelte';
-    import init, { HSV, RGB } from '$lib/rust/rust';
     import { onMount } from 'svelte';
     // import { greet } from "wasm3d";
 
@@ -19,16 +18,6 @@
     let space = 'cylindrical';
     let color = spring([r, g, b]);
     let style: string;
-    let rgb2hsv = () => {
-        console.log('AAAA');
-        let rgb = RGB.new(r, g, b);
-        console.log('BBBB');
-        let h = HSV.from_rgb(rgb);
-        console.log('CCCC');
-        hsv = `hsv(${h.h}, ${h.s}, ${h.v})`;
-        console.log('DDDD', hsv);
-        return hsv;
-    };
     $: $color = [r, g, b];
     $: {
         style = sx({ bg: $color });
@@ -49,5 +38,4 @@
         }}>BUTTON</button
     >
     <p {style}>rgb({r.toFixed(2)}, {g.toFixed(2)}, {b.toFixed(2)})</p>
-    <p>{rgb2hsv()}</p>
 </div>

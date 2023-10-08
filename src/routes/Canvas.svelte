@@ -3,7 +3,7 @@
     import vertsrc from '$lib/shaders/vert.glsl?raw';
     import fragsrc from '$lib/shaders/frag.glsl?raw';
     import { onMount } from 'svelte';
-    import init, { ColorView, RGB, HSV } from '$lib/rust';
+    import init, { ColorView } from '$lib/rust';
     // import { new_canvas } from "wasm3d";
     export let r = 0;
     export let g = 0;

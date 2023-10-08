@@ -103,21 +103,12 @@ vec3 linear_srgb_to_oklab(vec3 rgb) {
 }
 
 vec3 oklab_to_srgb(vec3 oklab) {
-    return linear_srgb_to_srgb(mark_out_of_gamut(oklab_to_linear_srgb(oklab)));
+    return linear_srgb_to_srgb(oklab_to_linear_srgb(oklab));
 }
 
-// vec3 oklab_to_linear_srgb(vec3 oklab) {
-//     mat3 m1 = mat3(1.0, 0.3963377774, 0.2158037573,
-//                    1.0, -0.1055613458, -0.0638541728,
-//                    1.0, -0.0894841775, -1.2914855480);
-//     mat3 m2 = mat3(4.0767416621, -3.3077115913, 0.2309699292,
-//                    -1.2684380046, 2.6097574011, -0.3413193965,
-//                    -0.0041960863, -0.7034186147, 1.7076147010);
-//     vec3 lms = m1 * oklab;
-//     lms = pow(lms, vec3(3.0, 3.0, 3.0));
-//     return m2 * lms;
-// }
-
+vec3 mark_oklab_to_srgb(vec3 oklab) {
+    return mark_out_of_gamut(oklab_to_srgb(oklab));
+}
 
 void main(){
     // REPLACE

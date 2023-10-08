@@ -107,6 +107,30 @@ pub fn quad_mesh() -> Vec<Vec3> {
     ];
 }
 
+pub fn nonuniform_subdivided_quad_mesh(
+    horizontal_subdivisions: u32,
+    vertical_subdivisions: u32,
+) -> Vec<Vec3> {
+    let mut mesh: Vec<Vec3> = Vec::new();
+    for i in 0..horizontal_subdivisions {
+        let left = i as f32 / horizontal_subdivisions as f32;
+        let right = (i + 1) as f32 / horizontal_subdivisions as f32;
+        for j in 0..vertical_subdivisions {
+            let top = j as f32 / vertical_subdivisions as f32;
+            let bottom = (j + 1) as f32 / vertical_subdivisions as f32;
+            mesh.extend(&[
+                vec3(left, top, 0.0),
+                vec3(right, bottom, 0.0),
+                vec3(left, bottom, 0.0),
+                vec3(left, top, 0.0),
+                vec3(right, top, 0.0),
+                vec3(right, bottom, 0.0),
+            ]);
+        }
+    }
+    mesh
+}
+
 pub fn cube_mesh() -> Vec<Vec3> {
     vec![
         // Up

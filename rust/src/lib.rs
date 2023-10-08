@@ -4,11 +4,15 @@ extern crate web_sys;
 
 use std::f32::consts::PI;
 
-use renders::{AxisInput, ColorSpace, Cursor, ColorChip};
+use camera::CustomController;
+use renders::{AxisInput, ColorChip, ColorSpace, Cursor};
+use scene::ColorScene;
 use winit::window::WindowBuilder;
-pub mod color;
+mod camera;
 mod geometry;
+mod mesh;
 mod renders;
+mod scene;
 
 use three_d::{
     renderer::{control::Event, *},
@@ -18,10 +22,8 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 
-pub use crate::{
-    color::web::{hsv, RGB},
-    renders::{InputState, Renderable, Renderer, Space},
-};
+pub use crate::renders::{InputState, Renderable, Renderer, Space};
+use crate::scene::{Scene, Target};
 
 #[wasm_bindgen]
 extern "C" {
@@ -47,123 +49,6 @@ fn from_cylindrical(v: Vec3) -> Vec3 {
     let z = v.x.sin() * v.z;
     let y = v.y;
     vec3(x, y, z)
-}
-
-struct CustomController {
-    control: CameraControl,
-    distance: Vec2,
-}
-impl CustomController {
-    /// Creates a new orbit control with the given target and minimum and maximum distance to the target.
-    pub fn new(target: Vec3, min_distance: f32, max_distance: f32) -> Self {
-        Self {
-            control: Self::create_controller(target, min_distance, max_distance),
-            distance: vec2(min_distance, max_distance),
-        }
-    }
-
-    fn create_controller(target: Vec3, min_distance: f32, max_distance: f32) -> CameraControl {
-        CameraControl {
-            left_drag_horizontal: CameraAction::OrbitLeft { target, speed: 0.1 },
-            left_drag_vertical: CameraAction::OrbitUp { target, speed: 0.1 },
-            scroll_vertical: CameraAction::Zoom {
-                min: min_distance,
-                max: max_distance,
-                speed: 0.01,
-                target,
-            },
-            ..Default::default()
-        }
-    }
-
-    pub fn set_target(&mut self, camera: &mut Camera, target: Vec3) {
-        let position = *camera.position();
-        let old_target = *camera.target();
-        camera.set_view(target + position - old_target, target, vec3(0.0, 1.0, 0.0));
-        self.control = Self::create_controller(target, self.distance.x, self.distance.y)
-    }
-
-    /// Handles the events. Must be called each frame.
-    pub fn handle_events(&mut self, camera: &mut Camera, events: &mut [Event]) -> bool {
-        if let CameraAction::Zoom { speed, target, .. } = &mut self.control.scroll_vertical {
-            let x = target.distance(*camera.position());
-            *speed = 0.001 * x + 0.001;
-        }
-        if let CameraAction::OrbitLeft { speed, target } = &mut self.control.left_drag_horizontal {
-            let x = target.distance(*camera.position());
-            *speed = 0.01 * x + 0.001;
-        }
-        if let CameraAction::OrbitUp { speed, target } = &mut self.control.left_drag_vertical {
-            let x = target.distance(*camera.position());
-            *speed = 0.01 * x + 0.001;
-        }
-        self.control.handle_events(camera, events)
-    }
-}
-
-struct Target<'a> {
-    target: &'a RenderTarget<'a>,
-    program: &'a mut Program,
-    pos_target: &'a RenderTarget<'a>,
-    pos_program: &'a mut Program,
-}
-
-trait Scene<T> {
-    fn update(&mut self, state: T);
-    fn render(&self, target: &mut Target, state: T);
-}
-
-struct ColorScene {
-    cursor: Cursor,
-    space: ColorSpace,
-    axes: [AxisInput; 3],
-    chip: ColorChip,
-}
-
-impl ColorScene {
-    fn new(context: &Context, color_space: ColorSpace) -> Self {
-        Self {
-            cursor: Cursor::cube(&context),
-            space: color_space,
-            axes: [
-                AxisInput::new(&context, 0),
-                AxisInput::new(&context, 1),
-                AxisInput::new(&context, 2),
-            ],
-            chip: ColorChip::new(&context),
-        }
-    }
-
-    fn cylinder(context: &Context) -> Self {
-        Self::new(context, ColorSpace::cylinder(context))
-    }
-
-    fn cube(context: &Context) -> Self {
-        Self::new(context, ColorSpace::cube(context))
-    }
-}
-
-impl Scene<&InputState> for ColorScene {
-    fn update(&mut self, state: &InputState) {
-        self.space.okhsv_embed(state.chunk);
-    }
-    fn render(&self, target: &mut Target, state: &InputState) {
-        let space = &self.space.model(state);
-        let screen = target.target;
-        target.program.render(screen, space);
-        target.program.render(screen, &self.cursor.model(state));
-        for i in 0..3 {
-            target.program.render(screen, &self.axes[i].model(state));
-        }
-        target.program.render(screen, &self.chip.model(state));
-        let screen = target.pos_target;
-        target.pos_program.render(screen, space);
-        for i in 0..3 {
-            target
-                .pos_program
-                .render(screen, &self.axes[i].model(state));
-        }
-    }
 }
 
 #[wasm_bindgen]
@@ -261,11 +146,11 @@ impl ColorView {
 
         // let cylindrical_program =
         //     color_program(&context, "color = vec4(hsv2rgb(xyz2hsv(pos.xyz)), 1.0);");
-        // let cylindrical_program =
-        // color_program(&context, "color = vec4(oklab_to_srgb(pos.yxz), 1.0);");
+        let cylindrical_program =
+            color_program(&context, "color = vec4(oklab_to_srgb(pos.xyz), 1.0);");
         // let cylindrical_program =
         //     color_program(&context, "color = vec4(linear_srgb_to_oklab(pos.yxz), 1.0);");
-        let cylindrical_program = color_program(&context, "color = vec4(linear_srgb_to_srgb(pos.xyz), 1.0);");
+        // let cylindrical_program = color_program(&context, "color = vec4(linear_srgb_to_srgb(pos.xyz), 1.0);");
 
         let linear_program = color_program(&context, "color = vec4(pos.xyz, 1.0);");
         let pos_program = color_program(&context, "color = vec4(pos.xyz, tag);");
@@ -286,6 +171,9 @@ impl ColorView {
             Wrapping::ClampToEdge,
             Wrapping::ClampToEdge,
         );
+        let state = InputState::new(vec3(1.0, 1.0, 1.0), camera);
+        let mut cylindrical_scene = ColorScene::cylinder(&context);
+        cylindrical_scene.update(&state);
         let view = ColorView {
             window,
             // width,
@@ -294,11 +182,11 @@ impl ColorView {
             position: vec2(0.0, 0.0),
             on_select,
             // on_hover: None,
-            state: InputState::new(vec3(1.0, 1.0, 1.0), camera, Space::Cylindrical),
+            state,
             cylindrical_program,
             linear_program,
             pos_program,
-            cylindrical_scene: ColorScene::cylinder(&context),
+            cylindrical_scene,
             linear_scene: ColorScene::cube(&context),
             pos_texture,
             depth_texture,
@@ -329,17 +217,16 @@ impl ColorView {
                 .handle_events(&mut self.state.camera, &mut input.events);
             let screen = input.screen();
             let state = &mut self.state;
+            state.input = true;
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),
                 self.depth_texture.as_depth_target(),
             );
             pos_target.clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0));
-            let (program, scene) = if state.space == Space::Linear {
-                (&mut self.linear_program, &mut self.linear_scene)
-            } else {
-                (&mut self.cylindrical_program, &mut self.cylindrical_scene)
-            };
+
+            let program = &mut self.cylindrical_program;
+            let scene = &mut self.cylindrical_scene;
             let mut target = Target {
                 target: &screen,
                 program,
@@ -356,20 +243,15 @@ impl ColorView {
             };
             let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
             let tag = pos[3] as u8;
-            let mut pos = vec3(pos[0], pos[1], pos[2]);
-            let mut pos_state = state.pos;
-            let mut saved = state.saved_pos;
-            if state.space == Space::Cylindrical {
-                pos = to_cylindrical(pos);
-                pos_state = state.cylindrical;
-                saved = state.saved_cylindrical;
-            }
-            let pos = match tag {
+            let pos = vec3(pos[0], pos[1], pos[2]);
+            let pos_state = state.pos;
+
+            state.pos = match tag {
                 1 => vec3(pos.x, pos_state.y, pos_state.z),
                 2 => vec3(pos_state.x, pos.y, pos_state.z),
                 3 => vec3(pos_state.x, pos_state.y, pos.z),
                 7 => pos,
-                _ => saved,
+                _ => state.saved_pos,
             };
             state.chunk = match tag {
                 1 => vec3(pos.x, state.chunk.y, state.chunk.z),
@@ -377,45 +259,14 @@ impl ColorView {
                 3 => vec3(state.chunk.x, state.chunk.y, pos.z),
                 _ => state.chunk,
             };
-            // log(&format!("{:?} {:?}", self.state.chunk, pos));
-            if state.space == Space::Cylindrical {
-                state.cylindrical = pos;
-                state.pos = from_cylindrical(pos);
-            } else {
-                state.cylindrical = to_cylindrical(pos);
-                state.pos = pos;
-            }
-            if press {
-                state.saved_cylindrical = state.cylindrical;
-                state.saved_pos = state.pos;
-            }
+            
             if pos != pos_state {
                 if let Some(on_select) = self.on_select.as_mut() {
-                    if state.space == Space::Cylindrical {
-                        log(&format!("{:?} {:?}", state.pos, state.cylindrical));
-                        let h = to_unit_cylindrical(state.cylindrical);
-                        let rgb = RGB::from(hsv(h.x, h.z, h.y));
-                        on_select(Vec3::from(rgb));
-                    } else {
-                        on_select(state.pos);
-                    }
+                    on_select(state.pos);
                 }
                 scene.update(state);
             }
             FrameOutput::default()
         });
-    }
-
-    pub fn set_space(&mut self, space: String) {
-        self.state.space = match space.as_str() {
-            "linear" => Space::Linear,
-            "cylindrical" => Space::Cylindrical,
-            _ => panic!("Expected 'linear' or 'cylindrical"),
-        };
-        let new_target = match self.state.space {
-            Space::Linear => vec3(0.5, 0.5, 0.5),
-            Space::Cylindrical => vec3(0.0, 0.5, 0.0),
-        };
-        self.control.set_target(&mut self.state.camera, new_target)
     }
 }
