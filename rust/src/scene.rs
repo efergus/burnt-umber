@@ -65,11 +65,11 @@ impl Scene<&InputState> for ColorScene {
         let screen = target.pos_target;
         target
             .pos_program
-            .render(screen, &self.space.input_model(state));
+            .render(screen, &self.space.model(state));
         for i in 0..3 {
             target
                 .pos_program
-                .render(screen, &self.axes[i].input_model(state));
+                .render(screen, &self.axes[i].model(state));
         }
     }
 }

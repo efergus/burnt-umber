@@ -9,7 +9,7 @@ use three_d::{
 use crate::{
     from_cylindrical,
     geometry::{quad_mesh, tube_mesh, unwrap_mesh},
-    mesh::{self, Mesh},
+    mesh::{Mesh}, log, pre_embed,
 };
 
 pub struct Model<'a> {
@@ -180,23 +180,6 @@ impl AxisInput {
             meta: self.meta_matrix(state),
         }
     }
-
-    pub fn input_model<'a>(&'a self, state: &InputState) -> Model<'a> {
-        Model {
-            positions: &self.positions.vertex_buffer(),
-            embed: &self.input.vertex_buffer(),
-            indices: &self.positions.element_buffer(),
-            render_states: RenderStates {
-                depth_test: DepthTest::Less,
-                cull: Cull::Back,
-                ..Default::default()
-            },
-            tag: self.axis as u8 + 1,
-            view: self.view_matrix(state),
-            model: Mat4::identity(),
-            meta: Mat4::identity(),
-        }
-    }
 }
 
 impl Renderable<InputState> for AxisInput {
@@ -247,7 +230,8 @@ pub struct ColorSpace {
 
 impl ColorSpace {
     pub fn cylinder(context: &Context) -> Self {
-        let m = mesh::geometry::cube().subdivide_n(5);
+        // let m = mesh::geometry::cube().subdivide_n(5);
+        let m = pre_embed::cylinder(48, 8, 4);
         let cube = Mesh::new(context, m.clone());
         let input = Mesh::new(context, m);
         let positions = Mesh::from_mesh_embedded(context, &input, |pos| {
@@ -277,20 +261,7 @@ impl ColorSpace {
         });
         self.embedding
             .embed_from(&self.input, |pos| okhsv_embed_oklab(pos));
-    }
-
-    pub fn input_model<'a>(&'a self, state: &InputState) -> Model<'a> {
-        let model = Mat4::from_nonuniform_scale(state.chunk.z, state.chunk.y, state.chunk.z);
-        Model {
-            positions: &self.positions.vertex_buffer(),
-            embed: &self.input.vertex_buffer(),
-            indices: &self.positions.element_buffer(),
-            render_states: RenderStates::default(),
-            tag: 7,
-            view: state.camera.projection() * state.camera.view(),
-            model,
-            meta: Mat4::identity(),
-        }
+        log(&format!("Embedded {} vertices", self.embedding.num_vertices() * 2));
     }
 }
 

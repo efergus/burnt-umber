@@ -1,4 +1,5 @@
 pub mod geometry;
+pub mod polyline;
 
 use cgmath::InnerSpace;
 use three_d::{Context, ElementBuffer, Vec3, VertexBuffer};
@@ -169,5 +170,9 @@ impl Mesh {
 
     pub fn element_buffer(&self) -> &ElementBuffer {
         &self.gpu_mesh.indices
+    }
+
+    pub fn num_vertices(&self) -> usize {
+        self.cpu_mesh.positions.len()
     }
 }
