@@ -32,7 +32,7 @@ pub fn cylinder(horizontal_subdivisions: u32, vertical_subdivisions: u32, radial
                 b as u32, d as u32, c as u32,
             ]);
         }
-        for rdiv in 0..radial_subdivisions {
+        for rdiv in 0..radial_subdivisions-1 {
             let a = hdiv * stride + vertical_subdivisions + 1 + rdiv * 2;
             let b = a + 2;
             let c = a + stride;

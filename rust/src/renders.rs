@@ -2,14 +2,14 @@ use std::f32::consts::PI;
 
 use palette::{okhsv, FromColor, Oklab};
 use three_d::{
-    vec3, Camera, Context, Cull, DepthTest, ElementBuffer, Mat4, Program, RenderStates,
+    vec3, Camera, Context, ElementBuffer, Mat4, Program, RenderStates,
     RenderTarget, SquareMatrix, Vec3, VertexBuffer,
 };
 
 use crate::{
     from_cylindrical,
     geometry::{quad_mesh, tube_mesh, unwrap_mesh},
-    mesh::{Mesh}, log, pre_embed,
+    mesh::Mesh, pre_embed,
 };
 
 pub struct Model<'a> {
@@ -130,11 +130,10 @@ impl AxisInput {
         F: Fn(Vec3) -> Vec3,
     {
         match self.axis {
-            Axis::X => self.input.embed(|pos| vec3(pos.x, position.y, position.z)),
-            Axis::Y => self.input.embed(|pos| vec3(position.x, pos.y, position.z)),
-            Axis::Z => self.input.embed(|pos| vec3(position.x, position.y, pos.z)),
+            Axis::X => self.embed.embed_from(&self.input, |pos: Vec3| embedding(vec3(pos.x, position.y, position.z))),
+            Axis::Y => self.embed.embed_from(&self.input, |pos: Vec3| embedding(vec3(position.x, pos.y, position.z))),
+            Axis::Z => self.embed.embed_from(&self.input, |pos: Vec3| embedding(vec3(position.x, position.y, pos.z))),
         }
-        self.embed.embed_from(&self.input, embedding);
     }
 
     fn view_matrix(&self, _state: &InputState) -> Mat4 {
@@ -222,7 +221,6 @@ pub fn okhsv_embed_oklab(pos: Vec3) -> Vec3 {
 }
 
 pub struct ColorSpace {
-    cube: Mesh,
     positions: Mesh,
     input: Mesh,
     embedding: Mesh,
@@ -232,7 +230,6 @@ impl ColorSpace {
     pub fn cylinder(context: &Context) -> Self {
         // let m = mesh::geometry::cube().subdivide_n(5);
         let m = pre_embed::cylinder(48, 8, 4);
-        let cube = Mesh::new(context, m.clone());
         let input = Mesh::new(context, m);
         let positions = Mesh::from_mesh_embedded(context, &input, |pos| {
             let t = pos.x * PI * 2.0;
@@ -245,7 +242,6 @@ impl ColorSpace {
         let embedding = Mesh::from_positions(context, vec![]);
 
         ColorSpace {
-            cube,
             positions,
             input,
             embedding,
@@ -256,12 +252,8 @@ impl ColorSpace {
 impl ColorSpace {
     pub fn okhsv_embed_oklab(&mut self, chunk: Vec3) {
         use cgmath::ElementWise;
-        self.input.embed_from(&self.cube, |pos| {
-            pos.mul_element_wise(vec3(1.0, chunk.y, chunk.z))
-        });
         self.embedding
-            .embed_from(&self.input, |pos| okhsv_embed_oklab(pos));
-        log(&format!("Embedded {} vertices", self.embedding.num_vertices() * 2));
+            .embed_from(&self.input, |pos| okhsv_embed_oklab(pos.mul_element_wise(vec3(1.0, chunk.y, chunk.z))));
     }
 }
 
