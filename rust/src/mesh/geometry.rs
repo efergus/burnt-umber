@@ -1,6 +1,6 @@
 use cgmath::vec3;
 
-use super::{CpuMesh, polyline::Polyline};
+use super::CpuMesh;
 
 pub fn cube() -> CpuMesh {
     let mut positions = Vec::new();
@@ -24,28 +24,4 @@ pub fn cube() -> CpuMesh {
     let mut cube = CpuMesh { positions, indices };
     cube.face_away(vec3(0.5, 0.5, 0.5));
     cube
-}
-
-pub fn lathe(polyline: &Polyline, subdivisions: u32, arc: f32) -> CpuMesh {
-    let mut positions = polyline.points.clone();
-    let mut indices = Vec::new();
-    let points = polyline.points.len() as u32;
-    
-    for i in 1..subdivisions {
-        let prev = (i - 1) * points;
-        let index = i * points;
-        let angle = arc * i as f32 / subdivisions as f32;
-        let cos = angle.cos();
-        let sin = angle.sin();
-        positions.extend(polyline.points.iter().map(|point| vec3(point.x * cos, point.y, point.x * sin)));
-        for j in 0..points - 1 {
-            let c = j + 0 + prev;
-            let d = j + 1 + prev;
-            let a = j + 0 + index;
-            let b = j + 1 + index;
-            indices.extend(vec![a as u32, b as u32, c as u32, a as u32, c as u32, d as u32]);
-        }
-    }
-
-    CpuMesh::new(positions, Some(indices))
 }

@@ -1,5 +1,9 @@
 use three_d::{degrees, vec2, vec3, Angle, Vec2, Vec3};
 
+pub fn max3(v: Vec3) -> f32 {
+    v.x.max(v.y).max(v.z)
+}
+
 fn polar(turn: f32) -> Vec2 {
     let angle = degrees(turn * 360.0);
     vec2(angle.cos(), angle.sin())
