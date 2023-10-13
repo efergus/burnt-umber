@@ -5,11 +5,13 @@ extern crate web_sys;
 use std::f32::consts::PI;
 
 use camera::CustomController;
+use palette::{FromColor, Okhsv, Oklab};
 use scene::ColorScene;
 use winit::window::WindowBuilder;
 mod camera;
 mod geometry;
 mod mesh;
+mod pre_embed;
 mod renders;
 mod scene;
 
@@ -231,6 +233,12 @@ impl ColorView {
             let pos = vec3(pos[0], pos[1], pos[2]);
             let pos_state = state.pos;
 
+            let pos = Okhsv::from_color(Oklab::new(pos.x, pos.y, pos.z));
+            let pos = vec3(
+                pos.hue.into_positive_radians() / (PI * 2.0),
+                pos.value,
+                pos.saturation,
+            );
             state.pos = match tag {
                 1 => vec3(pos.x, pos_state.y, pos_state.z),
                 2 => vec3(pos_state.x, pos.y, pos_state.z),
@@ -246,7 +254,7 @@ impl ColorView {
             };
 
             if press && tag > 0 {
-                state.saved_pos = pos;
+                state.saved_pos = state.pos;
             }
             if state.pos != pos_state {
                 if let Some(on_select) = self.on_select.as_mut() {

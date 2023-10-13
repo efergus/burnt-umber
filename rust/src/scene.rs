@@ -45,7 +45,7 @@ impl ColorScene {
 
 impl Scene<&InputState> for ColorScene {
     fn update(&mut self, state: &InputState) {
-        self.space.okhsv_embed_oklab(state.chunk);
+        self.space.okhsv_embed_quads(state.chunk);
         for i in 0..3 {
             self.axes[i].update(state.pos, okhsv_embed_oklab);
         }
@@ -63,13 +63,11 @@ impl Scene<&InputState> for ColorScene {
             .render(screen, &self.chip.model(&okhsv_embed_oklab(state.pos)));
 
         let screen = target.pos_target;
-        target
-            .pos_program
-            .render(screen, &self.space.input_model(state));
+        target.pos_program.render(screen, &self.space.model(state));
         for i in 0..3 {
             target
                 .pos_program
-                .render(screen, &self.axes[i].input_model(state));
+                .render(screen, &self.axes[i].model(state));
         }
     }
 }

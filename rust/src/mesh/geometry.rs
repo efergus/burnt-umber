@@ -13,13 +13,12 @@ pub fn cube() -> CpuMesh {
         }
     }
     let indices = vec![
-        // Left (x = 0)
-        0, 1, 2, 1, 3, 2, // Right (x = 1)
-        4, 6, 5, 5, 6, 7, // Up (y = 1)
-        2, 3, 7, 2, 7, 6, // Down (y = 0)
-        0, 4, 1, 1, 4, 5, // Back (z = 1)
-        0, 2, 4, 2, 6, 4, // Front (z = 0)
-        1, 5, 3, 3, 5, 7,
+        0, 1, 2, 1, 3, 2, // Left (x = 0)
+        4, 6, 5, 5, 6, 7, // Right (x = 1)
+        2, 3, 7, 2, 7, 6, // Up (y = 1)
+        0, 4, 1, 1, 4, 5, // Down (y = 0)
+        0, 2, 4, 2, 6, 4, // Back (z = 1)
+        1, 5, 3, 3, 5, 7, // Front (z = 0)
     ];
 
     let mut cube = CpuMesh { positions, indices };

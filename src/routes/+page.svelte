@@ -13,7 +13,7 @@
     {#await wasm}
         Loading
     {:then _}
-        <Center>
+        <Center horizontal={1}>
             <Colorpicker />
         </Center>
     {/await}

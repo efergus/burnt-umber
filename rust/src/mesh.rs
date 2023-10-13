@@ -76,6 +76,17 @@ impl CpuMesh {
         }
         mesh
     }
+
+    pub fn split_triangles(&self) -> Self {
+        Self {
+            positions: self
+                .indices
+                .iter()
+                .map(|&i| self.positions[i as usize])
+                .collect(),
+            indices: Vec::from_iter(0..self.indices.len() as u32),
+        }
+    }
 }
 
 pub struct GpuMesh {
@@ -155,6 +166,26 @@ impl Mesh {
         self.gpu_mesh.fill(&self.cpu_mesh);
     }
 
+    pub fn embed_from_triangles<F>(&mut self, mesh: &Mesh, f: F)
+    where
+        F: Fn([Vec3; 3]) -> [Vec3; 3],
+    {
+        let prev = mesh.positions().clone();
+        self.cpu_mesh.positions = prev
+            .chunks(3)
+            .map(|chunk| {
+                f([
+                    chunk[0],
+                    chunk[1],
+                    chunk[2],
+                ])
+            })
+            .flatten()
+            .collect();
+        self.cpu_mesh.indices = mesh.indices().clone();
+        self.gpu_mesh.fill(&self.cpu_mesh);
+    }
+
     pub fn positions(&self) -> &Vec<Vec3> {
         &self.cpu_mesh.positions
     }
@@ -169,5 +200,9 @@ impl Mesh {
 
     pub fn element_buffer(&self) -> &ElementBuffer {
         &self.gpu_mesh.indices
+    }
+
+    pub fn num_vertices(&self) -> usize {
+        self.cpu_mesh.positions.len()
     }
 }

@@ -2,14 +2,15 @@ use std::f32::consts::PI;
 
 use palette::{okhsv, FromColor, Oklab};
 use three_d::{
-    vec3, Camera, Context, Cull, DepthTest, ElementBuffer, Mat4, Program, RenderStates,
-    RenderTarget, SquareMatrix, Vec3, VertexBuffer,
+    vec3, Camera, Context, ElementBuffer, Mat4, Program, RenderStates, RenderTarget, SquareMatrix,
+    Vec3, VertexBuffer,
 };
 
 use crate::{
     from_cylindrical,
-    geometry::{quad_mesh, tube_mesh, unwrap_mesh},
-    mesh::{self, Mesh},
+    geometry::{quad_mesh, tube_mesh, unwrap_mesh, max3},
+    mesh::Mesh,
+    pre_embed,
 };
 
 pub struct Model<'a> {
@@ -130,11 +131,16 @@ impl AxisInput {
         F: Fn(Vec3) -> Vec3,
     {
         match self.axis {
-            Axis::X => self.input.embed(|pos| vec3(pos.x, position.y, position.z)),
-            Axis::Y => self.input.embed(|pos| vec3(position.x, pos.y, position.z)),
-            Axis::Z => self.input.embed(|pos| vec3(position.x, position.y, pos.z)),
+            Axis::X => self.embed.embed_from(&self.input, |pos: Vec3| {
+                embedding(vec3(pos.x, position.y, position.z))
+            }),
+            Axis::Y => self.embed.embed_from(&self.input, |pos: Vec3| {
+                embedding(vec3(position.x, pos.y, position.z))
+            }),
+            Axis::Z => self.embed.embed_from(&self.input, |pos: Vec3| {
+                embedding(vec3(position.x, position.y, pos.z))
+            }),
         }
-        self.embed.embed_from(&self.input, embedding);
     }
 
     fn view_matrix(&self, _state: &InputState) -> Mat4 {
@@ -180,23 +186,6 @@ impl AxisInput {
             meta: self.meta_matrix(state),
         }
     }
-
-    pub fn input_model<'a>(&'a self, state: &InputState) -> Model<'a> {
-        Model {
-            positions: &self.positions.vertex_buffer(),
-            embed: &self.input.vertex_buffer(),
-            indices: &self.positions.element_buffer(),
-            render_states: RenderStates {
-                depth_test: DepthTest::Less,
-                cull: Cull::Back,
-                ..Default::default()
-            },
-            tag: self.axis as u8 + 1,
-            view: self.view_matrix(state),
-            model: Mat4::identity(),
-            meta: Mat4::identity(),
-        }
-    }
 }
 
 impl Renderable<InputState> for AxisInput {
@@ -239,7 +228,6 @@ pub fn okhsv_embed_oklab(pos: Vec3) -> Vec3 {
 }
 
 pub struct ColorSpace {
-    cube: Mesh,
     positions: Mesh,
     input: Mesh,
     embedding: Mesh,
@@ -247,9 +235,9 @@ pub struct ColorSpace {
 
 impl ColorSpace {
     pub fn cylinder(context: &Context) -> Self {
-        let m = mesh::geometry::cube().subdivide_n(5);
-        let cube = Mesh::new(context, m.clone());
-        let input = Mesh::new(context, m);
+        let m = pre_embed::cylinder(16, 6, 4);
+        let split = m.split_triangles();
+        let input = Mesh::new(context, split.clone());
         let positions = Mesh::from_mesh_embedded(context, &input, |pos| {
             let t = pos.x * PI * 2.0;
             let r = pos.z;
@@ -261,7 +249,6 @@ impl ColorSpace {
         let embedding = Mesh::from_positions(context, vec![]);
 
         ColorSpace {
-            cube,
             positions,
             input,
             embedding,
@@ -272,25 +259,21 @@ impl ColorSpace {
 impl ColorSpace {
     pub fn okhsv_embed_oklab(&mut self, chunk: Vec3) {
         use cgmath::ElementWise;
-        self.input.embed_from(&self.cube, |pos| {
-            pos.mul_element_wise(vec3(1.0, chunk.y, chunk.z))
+        self.embedding.embed_from(&self.input, |pos| {
+            okhsv_embed_oklab(pos.mul_element_wise(vec3(1.0, chunk.y, chunk.z)))
         });
-        self.embedding
-            .embed_from(&self.input, |pos| okhsv_embed_oklab(pos));
     }
 
-    pub fn input_model<'a>(&'a self, state: &InputState) -> Model<'a> {
-        let model = Mat4::from_nonuniform_scale(state.chunk.z, state.chunk.y, state.chunk.z);
-        Model {
-            positions: &self.positions.vertex_buffer(),
-            embed: &self.input.vertex_buffer(),
-            indices: &self.positions.element_buffer(),
-            render_states: RenderStates::default(),
-            tag: 7,
-            view: state.camera.projection() * state.camera.view(),
-            model,
-            meta: Mat4::identity(),
-        }
+    pub fn okhsv_embed_quads(&mut self, chunk: Vec3) {
+        use cgmath::ElementWise;
+        self.embedding.embed_from_triangles(&self.input, |pos| {
+            let pos = okhsv_embed_oklab(vec3(
+                max3(vec3(pos[0].x, pos[1].x, pos[2].x)),
+                max3(vec3(pos[0].y, pos[1].y, pos[2].y)),
+                max3(vec3(pos[0].z, pos[1].z, pos[2].z)),
+            ).mul_element_wise(chunk));
+            [pos, pos, pos]
+        });
     }
 }
 
