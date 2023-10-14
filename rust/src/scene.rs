@@ -1,6 +1,10 @@
+use std::rc::Rc;
+
 use three_d::{Context, Program, RenderTarget};
 
 use crate::{
+    embed::{CylindricalEmbedding, OklabLinSrgbEmbedding, OkhsvEmbedding},
+    pre_embed,
     renders::{okhsv_embed_oklab, Axis, AxisInput, ColorChip, ColorSpace, Cursor},
     InputState, Renderable, Renderer,
 };
@@ -39,13 +43,21 @@ impl ColorScene {
     }
 
     pub fn cylinder(context: &Context) -> Self {
-        Self::new(context, ColorSpace::cylinder(context))
+        Self::new(
+            context,
+            ColorSpace::new(
+                context,
+                pre_embed::cylinder(48, 6, 2),
+                Rc::new(CylindricalEmbedding {}),
+                Rc::new(OkhsvEmbedding {}),
+            ),
+        )
     }
 }
 
 impl Scene<&InputState> for ColorScene {
     fn update(&mut self, state: &InputState) {
-        self.space.okhsv_embed_quads(state.chunk);
+        self.space.update(state.chunk);
         for i in 0..3 {
             self.axes[i].update(state.pos, okhsv_embed_oklab);
         }
@@ -63,7 +75,7 @@ impl Scene<&InputState> for ColorScene {
             .render(screen, &self.chip.model(&okhsv_embed_oklab(state.pos)));
 
         let screen = target.pos_target;
-        target.pos_program.render(screen, &self.space.model(state));
+        target.pos_program.render(screen, &self.space.space_model(state));
         for i in 0..3 {
             target
                 .pos_program

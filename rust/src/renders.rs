@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, rc::Rc};
 
 use palette::{okhsv, FromColor, Oklab};
 use three_d::{
@@ -7,9 +7,10 @@ use three_d::{
 };
 
 use crate::{
+    embed::Embedding,
     from_cylindrical,
-    geometry::{quad_mesh, tube_mesh, unwrap_mesh, max3},
-    mesh::Mesh,
+    geometry::{max3, quad_mesh, tube_mesh, unwrap_mesh},
+    mesh::{CpuMesh, Mesh},
     pre_embed,
 };
 
@@ -228,52 +229,72 @@ pub fn okhsv_embed_oklab(pos: Vec3) -> Vec3 {
 }
 
 pub struct ColorSpace {
-    positions: Mesh,
     input: Mesh,
-    embedding: Mesh,
+    space: Mesh,
+    color: Mesh,
+    space_embedding: Rc<dyn Embedding<Vec3>>,
+    color_embedding: Rc<dyn Embedding<Vec3>>,
+    prev_chunk: Vec3,
 }
 
 impl ColorSpace {
-    pub fn cylinder(context: &Context) -> Self {
-        let m = pre_embed::cylinder(16, 6, 4);
-        let split = m.split_triangles();
+    pub fn new(
+        context: &Context,
+        mesh: CpuMesh,
+        space_embedding: Rc<dyn Embedding<Vec3>>,
+        color_embedding: Rc<dyn Embedding<Vec3>>,
+    ) -> Self {
+        // let m = pre_embed::cylinder(16, 6, 4);
+        let split = mesh.split_triangles();
         let input = Mesh::new(context, split.clone());
-        let positions = Mesh::from_mesh_embedded(context, &input, |pos| {
-            let t = pos.x * PI * 2.0;
-            let r = pos.z;
-            let x = r * t.cos();
-            let y = pos.y;
-            let z = r * t.sin();
-            vec3(x, y, z)
-        });
-        let embedding = Mesh::from_positions(context, vec![]);
+        let positions = Mesh::from_mesh_embedded(context, &input, |pos| space_embedding.embed(pos));
+        let embeded = Mesh::from_mesh_embedded(context, &input, |pos| color_embedding.embed(pos));
 
         ColorSpace {
-            positions,
+            space: positions,
             input,
-            embedding,
+            color: embeded,
+            space_embedding,
+            color_embedding,
+            prev_chunk: vec3(1.0, 1.0, 1.0),
         }
     }
 }
 
 impl ColorSpace {
-    pub fn okhsv_embed_oklab(&mut self, chunk: Vec3) {
+    pub fn update(&mut self, chunk: Vec3) {
         use cgmath::ElementWise;
-        self.embedding.embed_from(&self.input, |pos| {
-            okhsv_embed_oklab(pos.mul_element_wise(vec3(1.0, chunk.y, chunk.z)))
-        });
+        // self.color.embed_from_triangles(&self.input, |pos| {
+        //     let pos = okhsv_embed_oklab(
+        //         vec3(
+        //             max3(vec3(pos[0].x, pos[1].x, pos[2].x)),
+        //             max3(vec3(pos[0].y, pos[1].y, pos[2].y)),
+        //             max3(vec3(pos[0].z, pos[1].z, pos[2].z)),
+        //         )
+        //         .mul_element_wise(chunk),
+        //     );
+        //     [pos, pos, pos]
+        // });
+        if self.prev_chunk != chunk {
+            self.color
+                .embed_from_positions(self.input.positions(), |pos| {
+                    self.color_embedding.embed(pos.mul_element_wise(chunk))
+                });
+                self.prev_chunk = chunk;
+            }
     }
-
-    pub fn okhsv_embed_quads(&mut self, chunk: Vec3) {
-        use cgmath::ElementWise;
-        self.embedding.embed_from_triangles(&self.input, |pos| {
-            let pos = okhsv_embed_oklab(vec3(
-                max3(vec3(pos[0].x, pos[1].x, pos[2].x)),
-                max3(vec3(pos[0].y, pos[1].y, pos[2].y)),
-                max3(vec3(pos[0].z, pos[1].z, pos[2].z)),
-            ).mul_element_wise(chunk));
-            [pos, pos, pos]
-        });
+    pub fn space_model<'a>(&'a self, state: &InputState) -> Model<'a> {
+        let model = Mat4::from_nonuniform_scale(state.chunk.z, state.chunk.y, state.chunk.z);
+        Model {
+            positions: &self.space.vertex_buffer(),
+            embed: &self.input.vertex_buffer(),
+            indices: &self.space.element_buffer(),
+            render_states: RenderStates::default(),
+            tag: 7,
+            view: state.camera.projection() * state.camera.view(),
+            model,
+            meta: model,
+        }
     }
 }
 
@@ -281,9 +302,9 @@ impl Renderable<InputState> for ColorSpace {
     fn model<'a>(&'a self, state: &InputState) -> Model<'a> {
         let model = Mat4::from_nonuniform_scale(state.chunk.z, state.chunk.y, state.chunk.z);
         Model {
-            positions: &self.positions.vertex_buffer(),
-            embed: &self.embedding.vertex_buffer(),
-            indices: &self.positions.element_buffer(),
+            positions: &self.space.vertex_buffer(),
+            embed: &self.color.vertex_buffer(),
+            indices: &self.space.element_buffer(),
             render_states: RenderStates::default(),
             tag: 7,
             view: state.camera.projection() * state.camera.view(),

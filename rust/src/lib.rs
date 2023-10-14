@@ -9,6 +9,7 @@ use palette::{FromColor, Okhsv, Oklab};
 use scene::ColorScene;
 use winit::window::WindowBuilder;
 mod camera;
+mod embed;
 mod geometry;
 mod mesh;
 mod pre_embed;
@@ -233,23 +234,21 @@ impl ColorView {
             let pos = vec3(pos[0], pos[1], pos[2]);
             let pos_state = state.pos;
 
-            let pos = Okhsv::from_color(Oklab::new(pos.x, pos.y, pos.z));
-            let pos = vec3(
-                pos.hue.into_positive_radians() / (PI * 2.0),
-                pos.value,
-                pos.saturation,
+            let inverted_pos = Okhsv::from_color(Oklab::new(pos.x, pos.y, pos.z));
+            let inverted_pos = vec3(
+                inverted_pos.hue.into_positive_radians() / (PI * 2.0),
+                inverted_pos.value,
+                inverted_pos.saturation,
             );
             state.pos = match tag {
-                1 => vec3(pos.x, pos_state.y, pos_state.z),
-                2 => vec3(pos_state.x, pos.y, pos_state.z),
-                3 => vec3(pos_state.x, pos_state.y, pos.z),
+                1 => vec3(inverted_pos.x, pos_state.y, pos_state.z),
+                2 => vec3(pos_state.x, inverted_pos.y, pos_state.z),
+                3 => vec3(pos_state.x, pos_state.y, inverted_pos.z),
                 7 => pos,
                 _ => state.saved_pos,
             };
             state.chunk = match tag {
-                1 => vec3(pos.x, state.chunk.y, state.chunk.z),
-                2 => vec3(state.chunk.x, pos.y, state.chunk.z),
-                3 => vec3(state.chunk.x, state.chunk.y, pos.z),
+                2 => vec3(state.chunk.x, state.pos.y, state.chunk.z),
                 _ => state.chunk,
             };
 
@@ -257,6 +256,7 @@ impl ColorView {
                 state.saved_pos = state.pos;
             }
             if state.pos != pos_state {
+                log(&format!("pos: {:?}", state.pos));
                 if let Some(on_select) = self.on_select.as_mut() {
                     on_select(state.pos);
                 }

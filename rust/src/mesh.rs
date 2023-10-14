@@ -166,6 +166,14 @@ impl Mesh {
         self.gpu_mesh.fill(&self.cpu_mesh);
     }
 
+    pub fn embed_from_positions<F>(&mut self, positions: &Vec<Vec3>, f: F)
+    where
+        F: Fn(Vec3) -> Vec3,
+    {
+        self.cpu_mesh.positions = positions.iter().map(|pos| f(*pos)).collect();
+        self.gpu_mesh.fill(&self.cpu_mesh);
+    }
+
     pub fn embed_from_triangles<F>(&mut self, mesh: &Mesh, f: F)
     where
         F: Fn([Vec3; 3]) -> [Vec3; 3],
@@ -173,13 +181,7 @@ impl Mesh {
         let prev = mesh.positions().clone();
         self.cpu_mesh.positions = prev
             .chunks(3)
-            .map(|chunk| {
-                f([
-                    chunk[0],
-                    chunk[1],
-                    chunk[2],
-                ])
-            })
+            .map(|chunk| f([chunk[0], chunk[1], chunk[2]]))
             .flatten()
             .collect();
         self.cpu_mesh.indices = mesh.indices().clone();
