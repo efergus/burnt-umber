@@ -4,9 +4,21 @@ use cgmath::{vec2, vec3, InnerSpace};
 use palette::{FromColor, LinSrgb, Okhsv, Oklab};
 use three_d::Vec3;
 
-pub trait Embedding<T> {
+pub trait Embedding<T = Vec3> {
     fn embed(&self, pos: T) -> T;
     fn invert(&self, pos: T) -> T;
+}
+
+pub struct IdentityEmbedding {}
+
+impl Embedding<Vec3> for IdentityEmbedding {
+    fn embed(&self, pos: Vec3) -> Vec3 {
+        pos
+    }
+
+    fn invert(&self, pos: Vec3) -> Vec3 {
+        pos
+    }
 }
 
 pub struct CylindricalEmbedding {}

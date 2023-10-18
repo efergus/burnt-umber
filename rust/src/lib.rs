@@ -5,12 +5,15 @@ extern crate web_sys;
 use std::f32::consts::PI;
 
 use camera::CustomController;
+use input::InputState;
 use palette::{FromColor, Okhsv, Oklab};
 use scene::ColorScene;
 use winit::window::WindowBuilder;
 mod camera;
+mod element;
 mod embed;
 mod geometry;
+mod input;
 mod mesh;
 mod pre_embed;
 mod renders;
@@ -24,7 +27,7 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 
-pub use crate::renders::{InputState, Renderable, Renderer, Space};
+pub use crate::renders::{Renderer, Space};
 use crate::scene::{Scene, Target};
 
 #[wasm_bindgen]
@@ -260,8 +263,8 @@ impl ColorView {
                 if let Some(on_select) = self.on_select.as_mut() {
                     on_select(state.pos);
                 }
-                scene.update(state);
             }
+            scene.update(state);
             FrameOutput::default()
         });
     }

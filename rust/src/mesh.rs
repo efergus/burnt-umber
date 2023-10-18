@@ -118,6 +118,10 @@ impl Mesh {
         Self { cpu_mesh, gpu_mesh }
     }
 
+    pub fn from_mesh(context: &Context, mesh: &Mesh) -> Self {
+        Self::new(context, mesh.cpu_mesh.clone())
+    }
+
     pub fn from_mesh_embedded<F>(context: &Context, mesh: &Mesh, f: F) -> Self
     where
         F: Fn(Vec3) -> Vec3,
