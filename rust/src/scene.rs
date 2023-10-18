@@ -3,10 +3,15 @@ use std::rc::Rc;
 use three_d::{Context, Program, RenderTarget};
 
 use crate::{
-    embed::{CylindricalEmbedding, OkhsvEmbedding, OklabLinSrgbEmbedding, Embedding},
+    element::{
+        coloraxis::{Axis, ColorAxis},
+        colorspace::ColorSpace,
+        ColorElement,
+    },
+    embed::{CylindricalEmbedding, Embedding, OkhsvEmbedding},
     pre_embed,
-    renders::{okhsv_embed_oklab, ColorChip, Cursor},
-    InputState, Renderer, element::{colorspace::ColorSpace, coloraxis::{ColorAxis, Axis}, ColorElement, ColorModel},
+    renders::{okhsv_embed_oklab, ColorChip, Cursor, Renderable},
+    InputState, Renderer,
 };
 
 pub struct Target<'a> {
@@ -29,11 +34,20 @@ pub struct ColorScene {
 }
 
 impl ColorScene {
-    fn new<T: Embedding + 'static, U: Embedding + 'static>(context: &Context, space_embedding: T, color_embedding: U) -> Self {
+    fn new<T: Embedding + 'static, U: Embedding + 'static>(
+        context: &Context,
+        space_embedding: T,
+        color_embedding: U,
+    ) -> Self {
         let space = pre_embed::cylinder(48, 6, 2);
         let space_embedding = Rc::new(space_embedding);
         let color_embedding = Rc::new(color_embedding);
-        let space = ColorSpace::new(context, space, space_embedding.clone(), color_embedding.clone());
+        let space = ColorSpace::new(
+            context,
+            space,
+            space_embedding.clone(),
+            color_embedding.clone(),
+        );
         Self {
             cursor: Cursor::cube(&context),
             space: space,
@@ -47,11 +61,7 @@ impl ColorScene {
     }
 
     pub fn cylinder(context: &Context) -> Self {
-        Self::new(
-            context,
-            CylindricalEmbedding {},
-            OkhsvEmbedding {},
-        )
+        Self::new(context, CylindricalEmbedding {}, OkhsvEmbedding {})
     }
 }
 
@@ -75,9 +85,7 @@ impl Scene<&InputState> for ColorScene {
             .render(screen, &self.chip.model(&okhsv_embed_oklab(state.pos)));
 
         let screen = target.pos_target;
-        target
-            .pos_program
-            .render(screen, &self.space.space_model());
+        target.pos_program.render(screen, &self.space.space_model());
         for i in 0..3 {
             target
                 .pos_program

@@ -36,17 +36,6 @@ pub fn plane(
     CpuMesh::new(positions, Some(indices))
 }
 
-/// Pre-embedded tube, where x indicates turn, y indicates height, and z indicates radius (always 1).
-pub fn tube(horizontal_subdivisions: u32, vertical_subdivisions: u32) -> CpuMesh {
-    plane(
-        horizontal_subdivisions,
-        vertical_subdivisions,
-        vec3(1.0, 0.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        vec3(0.0, 0.0, 1.0),
-    )
-}
-
 /// Pre-embedded cylinder, where x indicates turn, y indicates height, and z indicates radius.
 pub fn cylinder(
     horizontal_subdivisions: u32,

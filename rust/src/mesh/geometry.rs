@@ -2,7 +2,7 @@ use cgmath::vec3;
 
 use super::CpuMesh;
 
-pub fn cube() -> CpuMesh {
+pub fn _cube() -> CpuMesh {
     let mut positions = Vec::new();
     // z, then y, then x
     for i in 0..2 {
