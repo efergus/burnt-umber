@@ -6,7 +6,7 @@ use crate::{
     element::{
         coloraxis::{Axis, ColorAxis},
         colorspace::ColorSpace,
-        ColorElement,
+        ColorElement, ModelGraph, TaggedColorModel,
     },
     embed::{CylindricalEmbedding, Embedding, OkhsvEmbedding},
     pre_embed,
@@ -28,9 +28,8 @@ pub trait Scene<T> {
 
 pub struct ColorScene {
     cursor: Cursor,
-    space: ColorSpace,
-    axes: [ColorAxis; 3],
     chip: ColorChip,
+    elements: Vec<Box<dyn ColorElement<InputState>>>,
 }
 
 impl ColorScene {
@@ -50,11 +49,11 @@ impl ColorScene {
         );
         Self {
             cursor: Cursor::cube(&context),
-            space: space,
-            axes: [
-                ColorAxis::new(&context, Axis::X, color_embedding.clone()),
-                ColorAxis::new(&context, Axis::Y, color_embedding.clone()),
-                ColorAxis::new(&context, Axis::Z, color_embedding.clone()),
+            elements: vec![
+                Box::new(space),
+                Box::new(ColorAxis::new(&context, Axis::X, color_embedding.clone())),
+                Box::new(ColorAxis::new(&context, Axis::Y, color_embedding.clone())),
+                Box::new(ColorAxis::new(&context, Axis::Z, color_embedding.clone())),
             ],
             chip: ColorChip::new(&context),
         }
@@ -63,33 +62,44 @@ impl ColorScene {
     pub fn cylinder(context: &Context) -> Self {
         Self::new(context, CylindricalEmbedding {}, OkhsvEmbedding {})
     }
+
+    pub fn render_graph(&self, target: &mut Target, graph: &ModelGraph) {
+        match graph {
+            ModelGraph::Color(model) => {
+                target.program.render(target.target, model);
+            }
+            ModelGraph::Space(model) => {
+                let tagged_model = TaggedColorModel {
+                    model: model,
+                    tag: 1,
+                };
+                target.pos_program.render(target.pos_target, &tagged_model);
+            }
+            ModelGraph::Vec(models) => {
+                for model in models {
+                    self.render_graph(target, model);
+                }
+            }
+        }
+    }
 }
 
 impl Scene<&InputState> for ColorScene {
     fn update(&mut self, state: &InputState) {
-        self.space.update(state);
-        for i in 0..3 {
-            self.axes[i].update(state);
+        for element in &mut self.elements {
+            element.update(state);
         }
     }
 
     fn render(&self, target: &mut Target, state: &InputState) {
         let screen = target.target;
-        target.program.render(screen, &self.space.color_model());
-        target.program.render(screen, &self.cursor.model(state));
-        for i in 0..3 {
-            target.program.render(screen, &self.axes[i].color_model());
+        for element in &self.elements {
+            let model_graph = element.model();
+            self.render_graph(target, &model_graph);
         }
+        target.program.render(screen, &self.cursor.model(state));
         target
             .program
             .render(screen, &self.chip.model(&okhsv_embed_oklab(state.pos)));
-
-        let screen = target.pos_target;
-        target.pos_program.render(screen, &self.space.space_model());
-        for i in 0..3 {
-            target
-                .pos_program
-                .render(screen, &self.axes[i].space_model());
-        }
     }
 }

@@ -2,7 +2,7 @@ use palette::{okhsv, FromColor, Oklab};
 use three_d::{vec3, Context, Mat4, Program, RenderStates, RenderTarget, SquareMatrix, Vec3};
 
 use crate::{
-    element::{ColorModel, SpaceModel},
+    element::{ColorModel, TaggedColorModel},
     from_cylindrical,
     geometry::quad_mesh,
     input::InputState,
@@ -30,15 +30,16 @@ impl<'a> Renderer<ColorModel<'a>> for Program {
     }
 }
 
-impl<'a> Renderer<SpaceModel<'a>> for Program {
-    fn render(&mut self, target: &RenderTarget, model: &SpaceModel) {
+impl<'a> Renderer<TaggedColorModel<'a>> for Program {
+    fn render(&mut self, target: &RenderTarget, model: &TaggedColorModel<'a>) {
         target.write(move || {
-            self.use_uniform("view", model.view);
-            self.use_uniform("model", model.model);
-            self.use_uniform("meta", model.meta);
-            self.use_vertex_attribute("position", model.positions);
-            self.use_vertex_attribute("embed", model.embed);
-            self.draw_elements(model.render_states, target.viewport(), model.indices);
+            self.use_uniform("view", model.model.view);
+            self.use_uniform("model", model.model.model);
+            self.use_uniform("meta", model.model.meta);
+            self.use_uniform_if_required("tag", model.tag as f32);
+            self.use_vertex_attribute("position", model.model.positions);
+            self.use_vertex_attribute("embed", model.model.embed);
+            self.draw_elements(model.model.render_states, target.viewport(), model.model.indices);
         });
     }
 }

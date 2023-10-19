@@ -5,7 +5,7 @@ use three_d::{Context, Mat4, RenderStates, Vec3};
 
 use crate::{embed::Embedding, input::InputState, mesh::Mesh, pre_embed::plane};
 
-use super::{ColorElement, ColorModel, SpaceModel};
+use super::{ColorElement, ColorModel, ModelGraph};
 
 #[derive(Clone, Copy)]
 pub enum Axis {
@@ -81,16 +81,27 @@ impl ColorAxis {
 }
 
 impl ColorElement<InputState> for ColorAxis {
-    fn color_model(&self) -> super::ColorModel {
-        ColorModel {
-            positions: self.positions.vertex_buffer(),
-            embed: self.embed.vertex_buffer(),
-            indices: self.positions.element_buffer(),
-            render_states: RenderStates::default(),
-            view: self.view_matrix(),
-            model: Mat4::identity(),
-            meta: Mat4::identity(),
-        }
+    fn model(&self) -> ModelGraph {
+        ModelGraph::Vec(vec![
+            ModelGraph::Color(ColorModel {
+                positions: self.positions.vertex_buffer(),
+                embed: self.embed.vertex_buffer(),
+                indices: self.positions.element_buffer(),
+                render_states: RenderStates::default(),
+                view: self.view_matrix(),
+                model: Mat4::identity(),
+                meta: Mat4::identity(),
+            }),
+            ModelGraph::Space(ColorModel {
+                positions: self.positions.vertex_buffer(),
+                embed: self.input.vertex_buffer(),
+                indices: self.positions.element_buffer(),
+                render_states: RenderStates::default(),
+                view: self.view_matrix(),
+                model: Mat4::identity(),
+                meta: Mat4::identity(),
+            }),
+        ])
     }
 
     fn invert_space(&self, pos: Vec3) -> Vec3 {
@@ -121,17 +132,5 @@ impl ColorElement<InputState> for ColorAxis {
                 self.color_embedding
                     .embed(pos.mul_element_wise(scale) + origin)
             })
-    }
-
-    fn space_model(&self) -> super::SpaceModel {
-        SpaceModel {
-            positions: self.positions.vertex_buffer(),
-            embed: self.input.vertex_buffer(),
-            indices: self.positions.element_buffer(),
-            render_states: RenderStates::default(),
-            view: self.view_matrix(),
-            model: Mat4::identity(),
-            meta: Mat4::identity(),
-        }
     }
 }

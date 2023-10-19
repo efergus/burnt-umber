@@ -9,7 +9,7 @@ use crate::{
     mesh::{CpuMesh, Mesh},
 };
 
-use super::{ColorElement, ColorModel, SpaceModel};
+use super::{ColorElement, ColorModel, ModelGraph};
 
 pub struct ColorSpace {
     input: Mesh,
@@ -57,9 +57,9 @@ impl ColorElement<InputState> for ColorSpace {
                 });
         }
     }
-    fn color_model(&self) -> ColorModel {
+    fn model(&self) -> ModelGraph {
         let model = Mat4::from_nonuniform_scale(self.chunk.z, self.chunk.y, self.chunk.z);
-        ColorModel {
+        ModelGraph::Vec(vec![ModelGraph::Color(ColorModel {
             positions: &self.space.vertex_buffer(),
             embed: &self.color.vertex_buffer(),
             indices: &self.space.element_buffer(),
@@ -67,11 +67,8 @@ impl ColorElement<InputState> for ColorSpace {
             view: self.view,
             model,
             meta: Mat4::identity(),
-        }
-    }
-    fn space_model<'a>(&'a self) -> SpaceModel<'a> {
-        let model = Mat4::from_nonuniform_scale(self.chunk.z, self.chunk.y, self.chunk.z);
-        SpaceModel {
+        }),
+        ModelGraph::Space(ColorModel {
             positions: &self.space.vertex_buffer(),
             embed: &self.input.vertex_buffer(),
             indices: &self.space.element_buffer(),
@@ -79,7 +76,7 @@ impl ColorElement<InputState> for ColorSpace {
             view: self.view,
             model,
             meta: model,
-        }
+        })])
     }
     fn invert_space(&self, pos: Vec3) -> Vec3 {
         self.space_embedding.invert(pos)
