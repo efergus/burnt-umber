@@ -108,7 +108,7 @@ impl ColorElement<InputState> for ColorAxis {
         match self.axis {
             Axis::X => vec3(pos.x, self.pos.y, self.pos.z),
             Axis::Y => vec3(self.pos.x, pos.y, self.pos.z),
-            Axis::Z => vec3(self.pos.x, self.pos.y, pos.x),
+            Axis::Z => vec3(self.pos.x, self.pos.y, pos.z),
         }
     }
 

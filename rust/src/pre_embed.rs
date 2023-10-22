@@ -36,6 +36,59 @@ pub fn plane(
     CpuMesh::new(positions, Some(indices))
 }
 
+pub fn cube(
+    horizontal_subdivisions: u32,
+    vertical_subdivisions: u32,
+    depth_subdivisions: u32,
+) -> CpuMesh {
+    let origin = vec3(0.0, 0.0, 0.0);
+    let corner = vec3(1.0, 1.0, 1.0);
+    let mut cube = plane(
+        horizontal_subdivisions,
+        vertical_subdivisions,
+        vec3(1.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        origin,
+    );
+    cube.extend(&plane(
+        horizontal_subdivisions,
+        depth_subdivisions,
+        vec3(1.0, 0.0, 0.0),
+        vec3(0.0, 0.0, 1.0),
+        origin,
+    ));
+    cube.extend(&plane(
+        depth_subdivisions,
+        vertical_subdivisions,
+        vec3(0.0, 0.0, 1.0),
+        vec3(0.0, 1.0, 0.0),
+        origin,
+    ));
+    cube.extend(&plane(
+        horizontal_subdivisions,
+        vertical_subdivisions,
+        vec3(-1.0, 0.0, 0.0),
+        vec3(0.0, -1.0, 0.0),
+        corner,
+    ));
+    cube.extend(&plane(
+        horizontal_subdivisions,
+        depth_subdivisions,
+        vec3(-1.0, 0.0, 0.0),
+        vec3(0.0, 0.0, -1.0),
+        corner,
+    ));
+    cube.extend(&plane(
+        depth_subdivisions,
+        vertical_subdivisions,
+        vec3(0.0, 0.0, -1.0),
+        vec3(0.0, -1.0, 0.0),
+        corner,
+    ));
+    cube.face_away(vec3(0.5, 0.5, 0.5));
+    cube
+}
+
 /// Pre-embedded cylinder, where x indicates turn, y indicates height, and z indicates radius.
 pub fn cylinder(
     horizontal_subdivisions: u32,

@@ -2,11 +2,8 @@ extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
 
-use std::f32::consts::PI;
-
 use camera::CustomController;
 use input::InputState;
-use palette::{FromColor, Okhsv, Oklab};
 use scene::ColorScene;
 use winit::window::WindowBuilder;
 mod camera;
@@ -38,19 +35,11 @@ extern "C" {
     fn log(s: &str);
 }
 
-fn from_cylindrical(v: Vec3) -> Vec3 {
-    let h = v.x * PI * 2.0;
-    let x = h.cos() * v.z;
-    let z = h.sin() * v.z;
-    let y = v.y;
-    vec3(x, y, z)
-}
-
 #[wasm_bindgen]
 pub struct ColorView {
     window: Window,
     // width: u32,
-    height: u32,
+    // height: u32,
     control: CustomController,
     position: Vec2,
     state: InputState,
@@ -170,7 +159,7 @@ impl ColorView {
         let view = ColorView {
             window,
             // width,
-            height,
+            // height,
             control,
             position: vec2(0.0, 0.0),
             on_select,
@@ -208,7 +197,7 @@ impl ColorView {
                 .handle_events(&mut self.state.camera, &mut input.events);
             let screen = input.screen();
             let state = &mut self.state;
-            state.input = true;
+            state.mouse_pos = self.position;
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),
@@ -224,38 +213,10 @@ impl ColorView {
                 pos_target: &pos_target,
                 pos_program: &mut self.pos_program,
             };
-            scene.render(&mut target, state);
-            let position = self.position;
-            let scissor_box = ScissorBox {
-                x: position.x as i32,
-                y: (self.height as i32) - (position.y as i32),
-                width: 1,
-                height: 1,
-            };
-            let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
-            let tag = pos[3] as u8;
-            let pos = vec3(pos[0], pos[1], pos[2]);
             let pos_state = state.pos;
+            scene.render(&mut target, state);
 
-            let inverted_pos = Okhsv::from_color(Oklab::new(pos.x, pos.y, pos.z));
-            let inverted_pos = vec3(
-                inverted_pos.hue.into_positive_radians() / (PI * 2.0),
-                inverted_pos.value,
-                inverted_pos.saturation,
-            );
-            state.pos = match tag {
-                1 => vec3(inverted_pos.x, pos_state.y, pos_state.z),
-                2 => vec3(pos_state.x, inverted_pos.y, pos_state.z),
-                3 => vec3(pos_state.x, pos_state.y, inverted_pos.z),
-                7 => pos,
-                _ => state.saved_pos,
-            };
-            state.chunk = match tag {
-                2 => vec3(state.chunk.x, state.pos.y, state.chunk.z),
-                _ => state.chunk,
-            };
-
-            if press && tag > 0 {
+            if press {
                 state.saved_pos = state.pos;
             }
             if state.pos != pos_state {

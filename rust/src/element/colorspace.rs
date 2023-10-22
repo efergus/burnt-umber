@@ -15,7 +15,6 @@ pub struct ColorSpace {
     input: Mesh,
     space: Mesh,
     color: Mesh,
-    space_embedding: Rc<dyn Embedding<Vec3>>,
     color_embedding: Rc<dyn Embedding<Vec3>>,
     chunk: Vec3,
     view: Mat4,
@@ -37,7 +36,6 @@ impl ColorSpace {
             space: positions,
             input,
             color: embeded,
-            space_embedding,
             color_embedding,
             chunk: vec3(1.0, 1.0, 1.0),
             view: Mat4::identity(),
@@ -59,26 +57,28 @@ impl ColorElement<InputState> for ColorSpace {
     }
     fn model(&self) -> ModelGraph {
         let model = Mat4::from_nonuniform_scale(self.chunk.z, self.chunk.y, self.chunk.z);
-        ModelGraph::Vec(vec![ModelGraph::Color(ColorModel {
-            positions: &self.space.vertex_buffer(),
-            embed: &self.color.vertex_buffer(),
-            indices: &self.space.element_buffer(),
-            render_states: RenderStates::default(),
-            view: self.view,
-            model,
-            meta: Mat4::identity(),
-        }),
-        ModelGraph::Space(ColorModel {
-            positions: &self.space.vertex_buffer(),
-            embed: &self.input.vertex_buffer(),
-            indices: &self.space.element_buffer(),
-            render_states: RenderStates::default(),
-            view: self.view,
-            model,
-            meta: model,
-        })])
+        ModelGraph::Vec(vec![
+            ModelGraph::Color(ColorModel {
+                positions: &self.space.vertex_buffer(),
+                embed: &self.color.vertex_buffer(),
+                indices: &self.space.element_buffer(),
+                render_states: RenderStates::default(),
+                view: self.view,
+                model,
+                meta: Mat4::identity(),
+            }),
+            ModelGraph::Space(ColorModel {
+                positions: &self.space.vertex_buffer(),
+                embed: &self.input.vertex_buffer(),
+                indices: &self.space.element_buffer(),
+                render_states: RenderStates::default(),
+                view: self.view,
+                model,
+                meta: model,
+            }),
+        ])
     }
     fn invert_space(&self, pos: Vec3) -> Vec3 {
-        self.space_embedding.invert(pos)
+        pos
     }
 }

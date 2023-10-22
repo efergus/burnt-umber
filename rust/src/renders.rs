@@ -1,11 +1,8 @@
-use palette::{okhsv, FromColor, Oklab};
 use three_d::{vec3, Context, Mat4, Program, RenderStates, RenderTarget, SquareMatrix, Vec3};
 
 use crate::{
     element::{ColorModel, TaggedColorModel},
-    from_cylindrical,
     geometry::quad_mesh,
-    input::InputState,
     mesh::Mesh,
 };
 
@@ -39,7 +36,11 @@ impl<'a> Renderer<TaggedColorModel<'a>> for Program {
             self.use_uniform_if_required("tag", model.tag as f32);
             self.use_vertex_attribute("position", model.model.positions);
             self.use_vertex_attribute("embed", model.model.embed);
-            self.draw_elements(model.model.render_states, target.viewport(), model.model.indices);
+            self.draw_elements(
+                model.model.render_states,
+                target.viewport(),
+                model.model.indices,
+            );
         });
     }
 }
@@ -76,14 +77,13 @@ impl<'a> Renderable<'a, Vec3, ColorModel<'a>> for ColorChip {
     }
 }
 
-pub fn okhsv_embed_oklab(pos: Vec3) -> Vec3 {
-    let hsv = okhsv::Okhsv::new(pos.x * 360.0, pos.z, pos.y);
-    let oklab = Oklab::from_color(hsv);
-    vec3(oklab.l, oklab.a, oklab.b)
-}
-
 pub struct Cursor {
     positions: Mesh,
+}
+
+pub struct CursorState {
+    pub pos: Vec3,
+    pub view: Mat4,
 }
 
 impl Cursor {
@@ -95,15 +95,15 @@ impl Cursor {
     }
 }
 
-impl<'a> Renderable<'a, InputState, ColorModel<'a>> for Cursor {
-    fn model(&'a self, state: &InputState) -> ColorModel<'a> {
+impl<'a> Renderable<'a, CursorState, ColorModel<'a>> for Cursor {
+    fn model(&'a self, state: &CursorState) -> ColorModel<'a> {
         ColorModel {
             positions: &self.positions.vertex_buffer(),
             embed: &self.positions.vertex_buffer(),
             indices: &self.positions.element_buffer(),
             render_states: RenderStates::default(),
-            view: state.camera.projection() * state.camera.view(),
-            model: Mat4::from_translation(from_cylindrical(state.pos)) * Mat4::from_scale(0.05),
+            view: state.view,
+            model: Mat4::from_translation(state.pos) * Mat4::from_scale(0.05),
             meta: Mat4::from_scale(0.0),
         }
     }

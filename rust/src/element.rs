@@ -29,14 +29,3 @@ pub trait ColorElement<T> {
     fn model(&self) -> ModelGraph;
     fn invert_space(&self, pos: Vec3) -> Vec3;
 }
-
-// impl<'a, T, U: ColorElement<T>> Renderable<T, ColorModel<'a>> for U {
-//     fn model(&self, state: &T) -> ColorModel<'a> {
-//         self.color_model()
-//     }
-// }
-// impl<'a, T, U: ColorElement<T>> Renderable<T, SpaceModel<'a>> for U {
-//     fn model(&self, state: &T) -> SpaceModel<'a> {
-//         self.space_model()
-//     }
-// }

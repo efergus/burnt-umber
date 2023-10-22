@@ -87,6 +87,13 @@ impl CpuMesh {
             indices: Vec::from_iter(0..self.indices.len() as u32),
         }
     }
+
+    pub fn extend(&mut self, other: &Self) {
+        let offset = self.positions.len() as u32;
+        self.positions.extend(&other.positions);
+        self.indices
+            .extend(other.indices.iter().map(|&i| i + offset));
+    }
 }
 
 pub struct GpuMesh {
