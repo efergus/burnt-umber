@@ -220,7 +220,7 @@ impl ColorView {
                 state.saved_pos = state.pos;
             }
             if state.pos != pos_state {
-                log(&format!("pos: {:?}", state.pos));
+                log(&format!("pos: {:?}, chunk: {:?}", state.pos, state.chunk));
                 if let Some(on_select) = self.on_select.as_mut() {
                     on_select(state.pos);
                 }

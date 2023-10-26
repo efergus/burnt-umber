@@ -55,6 +55,11 @@ impl ColorElement<InputState> for ColorSpace {
                 });
         }
     }
+
+    fn update_state(&self, state: &mut InputState) {
+        state.pos = self.invert_space(state.pos)
+    }
+
     fn model(&self) -> ModelGraph {
         let model = Mat4::from_nonuniform_scale(self.chunk.z, self.chunk.y, self.chunk.z);
         ModelGraph::Vec(vec![

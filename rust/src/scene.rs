@@ -129,11 +129,12 @@ impl Scene<InputState> for ColorScene {
             .read_color_partially::<[f32; 4]>(scissor_box)[0];
         let tag = pos[3] as u8;
         let pos = vec3(pos[0], pos[1], pos[2]);
-        let pos = if tag > 0 {
-            self.elements[tag as usize - 1].invert_space(pos)
-        } else {
-            state.saved_pos
-        };
-        state.pos = pos;
+        if tag > 0 {
+            self.elements[tag as usize - 1].update_state(state);
+            state.pos = pos;
+        }
+        else {
+            state.pos = state.saved_pos;
+        }
     }
 }
