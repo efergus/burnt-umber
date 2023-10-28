@@ -130,7 +130,7 @@ impl ColorElement<InputState> for ColorAxis {
         };
 
         let origin = match self.axis {
-            Axis::X => vec3(pos.x-0.5, pos.y, pos.z),
+            Axis::X => vec3(pos.x - 0.5, pos.y, pos.z),
             Axis::Y => vec3(pos.x, 0.0, pos.z),
             Axis::Z => vec3(pos.x, pos.y, 0.0),
         };
@@ -148,5 +148,6 @@ impl ColorElement<InputState> for ColorAxis {
             Axis::X | Axis::Z => chunk,
             Axis::Y => vec3(chunk.x, state.pos.y, chunk.z),
         };
+        state.update_palette();
     }
 }

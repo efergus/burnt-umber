@@ -101,7 +101,10 @@ impl<'a> Renderable<'a, CursorState, ColorModel<'a>> for Cursor {
             positions: &self.positions.vertex_buffer(),
             embed: &self.positions.vertex_buffer(),
             indices: &self.positions.element_buffer(),
-            render_states: RenderStates::default(),
+            render_states: RenderStates {
+                depth_test: three_d::DepthTest::Always,
+                ..Default::default()
+            },
             view: state.view,
             model: Mat4::from_translation(state.pos) * Mat4::from_scale(0.05),
             meta: Mat4::from_scale(0.0),

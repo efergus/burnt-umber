@@ -1,6 +1,7 @@
 use three_d::{ElementBuffer, Mat4, RenderStates, Vec3, VertexBuffer};
 
 pub mod coloraxis;
+pub mod colorchips;
 pub mod colorspace;
 
 pub enum ModelGraph<'a> {

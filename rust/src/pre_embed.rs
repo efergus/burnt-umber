@@ -1,7 +1,7 @@
 use cgmath::vec3;
 use three_d::Vec3;
 
-use crate::mesh::CpuMesh;
+use crate::{geometry::quad_mesh, mesh::CpuMesh};
 
 pub fn plane(
     x_subdivisions: u32,
