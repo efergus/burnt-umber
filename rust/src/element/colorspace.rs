@@ -53,6 +53,7 @@ impl ColorElement<InputState> for ColorSpace {
                     self.color_embedding
                         .embed(pos.mul_element_wise(state.chunk))
                 });
+            self.chunk = state.chunk;
         }
     }
 

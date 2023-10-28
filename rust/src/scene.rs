@@ -10,8 +10,7 @@ use crate::{
         ColorElement, ModelGraph, TaggedColorModel,
     },
     embed::{
-        ComposedEmbedding, CylindricalEmbedding, Embedding, LinSrgbOklabEmbedding, OkhsvEmbedding,
-        SwapAxesEmbedding,
+        CylindricalEmbedding, Embedding, OkhsvEmbedding,
     },
     pre_embed,
     renders::{ColorChip, Cursor, CursorState, Renderable},
@@ -130,8 +129,8 @@ impl Scene<InputState> for ColorScene {
         let tag = pos[3] as u8;
         let pos = vec3(pos[0], pos[1], pos[2]);
         if tag > 0 {
+            state.pos =  self.elements[tag as usize - 1].invert_space(pos);
             self.elements[tag as usize - 1].update_state(state);
-            state.pos = pos;
         }
         else {
             state.pos = state.saved_pos;

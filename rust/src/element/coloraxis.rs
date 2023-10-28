@@ -7,7 +7,7 @@ use crate::{embed::Embedding, input::InputState, mesh::Mesh, pre_embed::plane};
 
 use super::{ColorElement, ColorModel, ModelGraph};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Axis {
     X = 0,
     Y = 1,
@@ -15,12 +15,12 @@ pub enum Axis {
 }
 pub struct ColorAxis {
     pub positions: Mesh,
-    pub cursor_positions: Mesh,
+    // pub cursor_positions: Mesh,
     pub input: Mesh,
     pub embed: Mesh,
     pub axis: Axis,
     color_embedding: Rc<dyn Embedding<Vec3>>,
-    space_embedding: Rc<dyn Embedding<Vec3>>,
+    // space_embedding: Rc<dyn Embedding<Vec3>>,
     pos: Vec3,
 }
 
@@ -29,7 +29,7 @@ impl ColorAxis {
         context: &Context,
         axis: Axis,
         color_embedding: Rc<dyn Embedding<Vec3>>,
-        space_embedding: Rc<dyn Embedding<Vec3>>,
+        // space_embedding: Rc<dyn Embedding<Vec3>>,
     ) -> ColorAxis {
         let unit_x = match axis {
             Axis::X | Axis::Y => vec3(1.0, 0.0, 0.0),
@@ -54,18 +54,18 @@ impl ColorAxis {
         let positions = Mesh::from_mesh_embedded(context, &mesh, |pos| {
             vec3(pos.dot(unit_x), pos.dot(unit_y), 0.0)
         });
-        let cursor_positions = Mesh::from_mesh_embedded(context, &mesh, |pos| {
-            space_embedding.embed(pos)
-        });
+        // let cursor_positions = Mesh::from_mesh_embedded(context, &mesh, |pos| {
+        //     space_embedding.embed(pos)
+        // });
 
         ColorAxis {
             positions,
-            cursor_positions,
+            // cursor_positions,
             input: Mesh::from_mesh(context, &mesh),
             embed: Mesh::from_mesh(context, &mesh),
             axis,
             color_embedding,
-            space_embedding,
+            // space_embedding,
             pos: Vec3::zero(),
         }
     }
@@ -130,7 +130,7 @@ impl ColorElement<InputState> for ColorAxis {
         };
 
         let origin = match self.axis {
-            Axis::X => vec3(pos.x, pos.y, pos.z),
+            Axis::X => vec3(pos.x-0.5, pos.y, pos.z),
             Axis::Y => vec3(pos.x, 0.0, pos.z),
             Axis::Z => vec3(pos.x, pos.y, 0.0),
         };
@@ -143,8 +143,6 @@ impl ColorElement<InputState> for ColorAxis {
     }
 
     fn update_state(&self, state: &mut InputState) {
-        state.pos = self.invert_space(state.pos);
-
         let chunk = state.chunk;
         state.chunk = match self.axis {
             Axis::X | Axis::Z => chunk,
