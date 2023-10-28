@@ -87,6 +87,13 @@ impl CpuMesh {
             indices: Vec::from_iter(0..self.indices.len() as u32),
         }
     }
+
+    pub fn extend(&mut self, other: &Self) {
+        let offset = self.positions.len() as u32;
+        self.positions.extend(&other.positions);
+        self.indices
+            .extend(other.indices.iter().map(|&i| i + offset));
+    }
 }
 
 pub struct GpuMesh {
@@ -116,6 +123,10 @@ impl Mesh {
     pub fn new(context: &Context, cpu_mesh: CpuMesh) -> Self {
         let gpu_mesh = GpuMesh::new(context, &cpu_mesh);
         Self { cpu_mesh, gpu_mesh }
+    }
+
+    pub fn from_mesh(context: &Context, mesh: &Mesh) -> Self {
+        Self::new(context, mesh.cpu_mesh.clone())
     }
 
     pub fn from_mesh_embedded<F>(context: &Context, mesh: &Mesh, f: F) -> Self
@@ -166,6 +177,14 @@ impl Mesh {
         self.gpu_mesh.fill(&self.cpu_mesh);
     }
 
+    pub fn embed_from_positions<F>(&mut self, positions: &Vec<Vec3>, f: F)
+    where
+        F: Fn(Vec3) -> Vec3,
+    {
+        self.cpu_mesh.positions = positions.iter().map(|pos| f(*pos)).collect();
+        self.gpu_mesh.fill(&self.cpu_mesh);
+    }
+
     pub fn embed_from_triangles<F>(&mut self, mesh: &Mesh, f: F)
     where
         F: Fn([Vec3; 3]) -> [Vec3; 3],
@@ -173,13 +192,7 @@ impl Mesh {
         let prev = mesh.positions().clone();
         self.cpu_mesh.positions = prev
             .chunks(3)
-            .map(|chunk| {
-                f([
-                    chunk[0],
-                    chunk[1],
-                    chunk[2],
-                ])
-            })
+            .map(|chunk| f([chunk[0], chunk[1], chunk[2]]))
             .flatten()
             .collect();
         self.cpu_mesh.indices = mesh.indices().clone();

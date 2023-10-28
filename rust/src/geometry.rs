@@ -1,7 +1,11 @@
 use three_d::{degrees, vec2, vec3, Angle, Vec2, Vec3};
 
-pub fn max3(v: Vec3) -> f32 {
-    v.x.max(v.y).max(v.z)
+pub fn max3(x: f32, y: f32, z: f32) -> f32 {
+    x.max(y).max(z)
+}
+
+pub fn min3(x: f32, y: f32, z: f32) -> f32 {
+    x.min(y).min(z)
 }
 
 fn polar(turn: f32) -> Vec2 {

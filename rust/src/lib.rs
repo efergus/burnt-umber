@@ -2,14 +2,15 @@ extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 extern crate web_sys;
 
-use std::f32::consts::PI;
-
 use camera::CustomController;
-use palette::{FromColor, Okhsv, Oklab};
+use input::InputState;
 use scene::ColorScene;
 use winit::window::WindowBuilder;
 mod camera;
+mod element;
+mod embed;
 mod geometry;
+mod input;
 mod mesh;
 mod pre_embed;
 mod renders;
@@ -23,7 +24,7 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::HtmlCanvasElement;
 
-pub use crate::renders::{InputState, Renderable, Renderer, Space};
+pub use crate::renders::{Renderer, Space};
 use crate::scene::{Scene, Target};
 
 #[wasm_bindgen]
@@ -34,19 +35,11 @@ extern "C" {
     fn log(s: &str);
 }
 
-fn from_cylindrical(v: Vec3) -> Vec3 {
-    let h = v.x * PI * 2.0;
-    let x = h.cos() * v.z;
-    let z = h.sin() * v.z;
-    let y = v.y;
-    vec3(x, y, z)
-}
-
 #[wasm_bindgen]
 pub struct ColorView {
     window: Window,
     // width: u32,
-    height: u32,
+    // height: u32,
     control: CustomController,
     position: Vec2,
     state: InputState,
@@ -166,7 +159,7 @@ impl ColorView {
         let view = ColorView {
             window,
             // width,
-            height,
+            // height,
             control,
             position: vec2(0.0, 0.0),
             on_select,
@@ -204,7 +197,7 @@ impl ColorView {
                 .handle_events(&mut self.state.camera, &mut input.events);
             let screen = input.screen();
             let state = &mut self.state;
-            state.input = true;
+            state.mouse_pos = self.position;
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),
@@ -220,48 +213,19 @@ impl ColorView {
                 pos_target: &pos_target,
                 pos_program: &mut self.pos_program,
             };
-            scene.render(&mut target, state);
-            let position = self.position;
-            let scissor_box = ScissorBox {
-                x: position.x as i32,
-                y: (self.height as i32) - (position.y as i32),
-                width: 1,
-                height: 1,
-            };
-            let pos = pos_target.read_color_partially::<[f32; 4]>(scissor_box)[0];
-            let tag = pos[3] as u8;
-            let pos = vec3(pos[0], pos[1], pos[2]);
             let pos_state = state.pos;
+            scene.render(&mut target, state);
 
-            let pos = Okhsv::from_color(Oklab::new(pos.x, pos.y, pos.z));
-            let pos = vec3(
-                pos.hue.into_positive_radians() / (PI * 2.0),
-                pos.value,
-                pos.saturation,
-            );
-            state.pos = match tag {
-                1 => vec3(pos.x, pos_state.y, pos_state.z),
-                2 => vec3(pos_state.x, pos.y, pos_state.z),
-                3 => vec3(pos_state.x, pos_state.y, pos.z),
-                7 => pos,
-                _ => state.saved_pos,
-            };
-            state.chunk = match tag {
-                1 => vec3(pos.x, state.chunk.y, state.chunk.z),
-                2 => vec3(state.chunk.x, pos.y, state.chunk.z),
-                3 => vec3(state.chunk.x, state.chunk.y, pos.z),
-                _ => state.chunk,
-            };
-
-            if press && tag > 0 {
+            if press {
                 state.saved_pos = state.pos;
             }
             if state.pos != pos_state {
+                log(&format!("before: {:?} after: {:?}, chunk: {:?}", pos_state, state.pos, state.chunk));
                 if let Some(on_select) = self.on_select.as_mut() {
                     on_select(state.pos);
                 }
-                scene.update(state);
             }
+            scene.update(state);
             FrameOutput::default()
         });
     }
