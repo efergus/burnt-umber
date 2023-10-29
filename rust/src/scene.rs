@@ -6,12 +6,11 @@ use three_d::{Context, Program, RenderTarget, ScissorBox, Vec3};
 use crate::{
     element::{
         coloraxis::{Axis, ColorAxis},
+        colorchips::ColorChips,
         colorspace::ColorSpace,
         ColorElement, ModelGraph, TaggedColorModel,
     },
-    embed::{
-        CylindricalEmbedding, Embedding, OkhsvEmbedding,
-    },
+    embed::{CylindricalEmbedding, Embedding, OkhsvEmbedding, OkhslEmbedding},
     pre_embed,
     renders::{ColorChip, Cursor, CursorState, Renderable},
     InputState, Renderer,
@@ -31,7 +30,6 @@ pub trait Scene<T> {
 
 pub struct ColorScene {
     cursor: Cursor,
-    chip: ColorChip,
     elements: Vec<Box<dyn ColorElement<InputState>>>,
     color_embedding: Rc<dyn Embedding<Vec3>>,
     space_embedding: Rc<dyn Embedding<Vec3>>,
@@ -59,8 +57,8 @@ impl ColorScene {
                 Box::new(ColorAxis::new(&context, Axis::X, color_embedding.clone())),
                 Box::new(ColorAxis::new(&context, Axis::Y, color_embedding.clone())),
                 Box::new(ColorAxis::new(&context, Axis::Z, color_embedding.clone())),
+                Box::new(ColorChips::new(&context, 6, 0.2, color_embedding.clone())),
             ],
-            chip: ColorChip::new(&context),
             color_embedding,
             space_embedding,
         }
@@ -112,10 +110,6 @@ impl Scene<InputState> for ColorScene {
                 view: state.camera.projection() * state.camera.view(),
             }),
         );
-        target.program.render(
-            screen,
-            &self.chip.model(&self.color_embedding.embed(state.pos)),
-        );
 
         let scissor_box = ScissorBox {
             x: state.mouse_pos.x as i32,
@@ -129,11 +123,12 @@ impl Scene<InputState> for ColorScene {
         let tag = pos[3] as u8;
         let pos = vec3(pos[0], pos[1], pos[2]);
         if tag > 0 {
-            state.pos =  self.elements[tag as usize - 1].invert_space(pos);
+            state.pos = self.elements[tag as usize - 1].invert_space(pos);
+            state.color = self.color_embedding.embed(pos);
             self.elements[tag as usize - 1].update_state(state);
-        }
-        else {
+        } else {
             state.pos = state.saved_pos;
+            state.update_palette();
         }
     }
 }
