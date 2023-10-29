@@ -10,7 +10,7 @@ use crate::{
         colorspace::ColorSpace,
         ColorElement, ModelGraph, TaggedColorModel,
     },
-    embed::{CylindricalEmbedding, Embedding, OkhsvEmbedding},
+    embed::{CylindricalEmbedding, Embedding, OkhsvEmbedding, OkhslEmbedding},
     pre_embed,
     renders::{ColorChip, Cursor, CursorState, Renderable},
     InputState, Renderer,

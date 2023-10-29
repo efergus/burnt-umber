@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use cgmath::{vec2, vec3, InnerSpace};
-use palette::{FromColor, LinSrgb, Okhsv, Oklab};
+use palette::{FromColor, LinSrgb, Okhsv, Oklab, Okhsl};
 use three_d::Vec3;
 
 use crate::element::coloraxis::Axis;
@@ -108,6 +108,25 @@ impl Embedding<Vec3> for OkhsvEmbedding {
         let s = hsv.saturation;
         let v = hsv.value;
         vec3(h, v, s)
+    }
+}
+
+pub struct OkhslEmbedding {}
+
+impl Embedding<Vec3> for OkhslEmbedding {
+    fn embed(&self, pos: Vec3) -> Vec3 {
+        let hsl: Okhsl = Okhsl::new(pos.x * 360.0, pos.z, pos.y);
+        let oklab = Oklab::from_color(hsl);
+        vec3(oklab.l, oklab.a, oklab.b)
+    }
+
+    fn invert(&self, pos: Vec3) -> Vec3 {
+        let oklab = Oklab::new(pos.x, pos.y, pos.z);
+        let hsl = Okhsl::from_color(oklab);
+        let h = hsl.hue.into_positive_radians() / PI / 2.0;
+        let s = hsl.saturation;
+        let l = hsl.lightness;
+        vec3(h, l, s)
     }
 }
 
