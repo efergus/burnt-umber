@@ -43,7 +43,7 @@ impl CpuMesh {
         self.face(point, true)
     }
 
-    pub fn subdivide(&self) -> Self {
+    pub fn _subdivide(&self) -> Self {
         let mut new_positions = self.positions.clone();
         let mut new_indices = Vec::new();
         for i in 0..self.indices.len() / 3 {
@@ -69,10 +69,10 @@ impl CpuMesh {
         }
     }
 
-    pub fn subdivide_n(&self, n: u32) -> Self {
+    pub fn _subdivide_n(&self, n: u32) -> Self {
         let mut mesh = self.clone();
         for _ in 0..n {
-            mesh = mesh.subdivide();
+            mesh = mesh._subdivide();
         }
         mesh
     }
@@ -168,12 +168,12 @@ impl Mesh {
         self.gpu_mesh.positions.fill(&self.cpu_mesh.positions);
     }
 
-    pub fn embed_from<F>(&mut self, mesh: &Mesh, f: F)
+    pub fn _embed_from<F>(&mut self, mesh: &Mesh, f: F)
     where
         F: Fn(Vec3) -> Vec3,
     {
         self.cpu_mesh.positions = mesh.positions().iter().map(|pos| f(*pos)).collect();
-        self.cpu_mesh.indices = mesh.indices().clone();
+        self.cpu_mesh.indices = mesh._indices().clone();
         self.gpu_mesh.fill(&self.cpu_mesh);
     }
 
@@ -185,7 +185,7 @@ impl Mesh {
         self.gpu_mesh.fill(&self.cpu_mesh);
     }
 
-    pub fn embed_from_triangles<F>(&mut self, mesh: &Mesh, f: F)
+    pub fn _embed_from_triangles<F>(&mut self, mesh: &Mesh, f: F)
     where
         F: Fn([Vec3; 3]) -> [Vec3; 3],
     {
@@ -195,7 +195,7 @@ impl Mesh {
             .map(|chunk| f([chunk[0], chunk[1], chunk[2]]))
             .flatten()
             .collect();
-        self.cpu_mesh.indices = mesh.indices().clone();
+        self.cpu_mesh.indices = mesh._indices().clone();
         self.gpu_mesh.fill(&self.cpu_mesh);
     }
 
@@ -203,7 +203,7 @@ impl Mesh {
         &self.cpu_mesh.positions
     }
 
-    pub fn indices(&self) -> &Vec<u32> {
+    pub fn _indices(&self) -> &Vec<u32> {
         &self.cpu_mesh.indices
     }
 
@@ -215,7 +215,7 @@ impl Mesh {
         &self.gpu_mesh.indices
     }
 
-    pub fn num_vertices(&self) -> usize {
+    pub fn _num_vertices(&self) -> usize {
         self.cpu_mesh.positions.len()
     }
 }

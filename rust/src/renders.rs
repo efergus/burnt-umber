@@ -1,8 +1,7 @@
-use three_d::{vec3, Context, Mat4, Program, RenderStates, RenderTarget, SquareMatrix, Vec3};
+use three_d::{Context, Mat4, Program, RenderStates, RenderTarget, Vec3};
 
 use crate::{
     element::{ColorModel, TaggedColorModel},
-    geometry::quad_mesh,
     mesh::Mesh,
 };
 
@@ -50,33 +49,6 @@ pub enum Space {
     Linear,
     Cylindrical,
 }
-
-pub struct ColorChip {
-    positions: Mesh,
-}
-
-impl ColorChip {
-    pub fn new(context: &Context) -> Self {
-        ColorChip {
-            positions: Mesh::from_positions(context, quad_mesh()),
-        }
-    }
-}
-
-impl<'a> Renderable<'a, Vec3, ColorModel<'a>> for ColorChip {
-    fn model(&'a self, pos: &Vec3) -> ColorModel<'a> {
-        ColorModel {
-            positions: &self.positions.vertex_buffer(),
-            embed: &self.positions.vertex_buffer(),
-            indices: &self.positions.element_buffer(),
-            render_states: RenderStates::default(),
-            view: Mat4::identity(),
-            model: Mat4::from_translation(vec3(0.8, 0.8, 0.0)) * Mat4::from_scale(0.2),
-            meta: Mat4::from_translation(*pos) * Mat4::from_scale(0.0),
-        }
-    }
-}
-
 pub struct Cursor {
     positions: Mesh,
 }
