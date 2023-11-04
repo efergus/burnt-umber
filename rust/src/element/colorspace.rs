@@ -59,7 +59,6 @@ impl ColorElement<InputState> for ColorSpace {
 
     fn update_state(&self, state: &mut InputState) {
         state.pos = self.invert_space(state.pos);
-        state.update_palette();
     }
 
     fn model(&self) -> ModelGraph {

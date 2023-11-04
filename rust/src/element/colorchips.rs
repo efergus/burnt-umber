@@ -14,6 +14,7 @@ pub struct ColorChips {
     unit: Vec3,
     count: usize,
     size: f32,
+    hover: bool,
 }
 
 impl ColorChips {
@@ -25,13 +26,24 @@ impl ColorChips {
             embed,
             count,
             size,
+            hover: false,
         }
     }
 }
 
 impl ColorElement<InputState> for ColorChips {
     fn update(&mut self, state: &InputState) {
-        self.origin = state.palette_pos;
+        if !self.hover {
+            self.origin = state.pos;
+        }
+    }
+
+    fn entered(&mut self) {
+        self.hover = true;
+    }
+
+    fn exited(&mut self) {
+        self.hover = false;
     }
 
     fn model(&self) -> ModelGraph {
