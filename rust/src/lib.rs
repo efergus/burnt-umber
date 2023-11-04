@@ -218,7 +218,6 @@ impl ColorView {
 
             if press {
                 state.saved_pos = state.pos;
-                state.update_palette();
             }
             if state.pos != pos_state {
                 log(&format!(

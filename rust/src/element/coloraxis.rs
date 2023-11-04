@@ -27,7 +27,8 @@ pub struct ColorAxis {
     camera_view: Mat4,
     color_embedding: Rc<dyn Embedding<Vec3>>,
     pos: Vec3,
-    saved_pos: Vec3,
+    active_pos: Vec3,
+    hover: bool,
 }
 
 impl ColorAxis {
@@ -63,13 +64,7 @@ impl ColorAxis {
 
         let mut cursor_positions = Mesh::new(
             context,
-            plane(
-                8,
-                1,
-                Vec3::unit_x(),
-                Vec3::unit_y(),
-                vec3(0.0, 0.0, -0.02),
-            ),
+            plane(8, 1, Vec3::unit_x(), Vec3::unit_y(), vec3(0.0, 0.0, -0.02)),
         );
         cursor_positions.embed(CylindricalEmbedding::static_embed);
 
@@ -82,7 +77,8 @@ impl ColorAxis {
             camera_view: Mat4::identity(),
             color_embedding,
             pos: Vec3::zero(),
-            saved_pos: Vec3::zero(),
+            active_pos: Vec3::zero(),
+            hover: false,
         }
     }
 
@@ -106,12 +102,13 @@ impl ColorAxis {
 
 impl ColorElement<InputState> for ColorAxis {
     fn model(&self) -> ModelGraph {
+        let pos = self.active_pos;
         let flatten = Mat4::from_angle_z(degrees(-90.0));
-        let lift = Mat4::from_translation(vec3(0.0, self.pos.y, 0.0));
-        let shift = Mat4::from_translation(vec3(0.0, 0.0, self.pos.z));
-        let rotation = Mat4::from_angle_y(degrees(-self.pos.x * 360.0));
-        let scale_y = Mat4::from_nonuniform_scale(1.0, self.pos.y, 1.0);
-        let scale_z = Mat4::from_nonuniform_scale(1.0, self.pos.z, 1.0);
+        let lift = Mat4::from_translation(vec3(0.0, pos.y, 0.0));
+        let shift = Mat4::from_translation(vec3(0.0, 0.0, pos.z));
+        let rotation = Mat4::from_angle_y(degrees(-pos.x * 360.0));
+        let scale_y = Mat4::from_nonuniform_scale(1.0, pos.y, 1.0);
+        let scale_z = Mat4::from_nonuniform_scale(1.0, pos.z, 1.0);
         let cursor_model = match self.axis {
             Axis::X => Mat4::identity(),
             Axis::Y => Mat4::from_angle_y(degrees(90.0)) * rotation * shift * scale_y,
@@ -119,11 +116,9 @@ impl ColorElement<InputState> for ColorAxis {
         };
         let cursor_meta = match self.axis {
             Axis::Y | Axis::Z => {
-                Mat4::from_translation(self.color_embedding.embed(self.pos)) * Mat4::from_scale(0.0)
+                Mat4::from_translation(self.color_embedding.embed(pos)) * Mat4::from_scale(0.0)
             }
-            Axis::X => {
-                Mat4::from_translation(vec3( 0.8, 0.0, 0.0)) * Mat4::from_scale(0.0)
-            }
+            Axis::X => Mat4::from_translation(vec3(0.8, 0.0, 0.0)) * Mat4::from_scale(0.0),
         };
         ModelGraph::Vec(vec![
             ModelGraph::Color(ColorModel {
@@ -159,9 +154,17 @@ impl ColorElement<InputState> for ColorAxis {
         ])
     }
 
+    fn entered(&mut self) {
+        self.hover = true;
+    }
+
+    fn exited(&mut self) {
+        self.hover = false;
+    }
+
     fn invert_space(&self, pos: Vec3) -> Vec3 {
         match self.axis {
-            Axis::X => vec3(pos.x + self.saved_pos.x - 0.5, self.pos.y, self.pos.z),
+            Axis::X => vec3(pos.x + self.pos.x - 0.5, self.pos.y, self.pos.z),
             Axis::Y => vec3(self.pos.x, pos.y, self.pos.z),
             Axis::Z => vec3(self.pos.x, self.pos.y, pos.z),
         }
@@ -169,16 +172,17 @@ impl ColorElement<InputState> for ColorAxis {
 
     fn update(&mut self, state: &InputState) {
         let pos = state.pos;
-        self.pos = pos;
-        self.saved_pos = state.saved_pos;
-
+        if !self.hover {
+            self.pos = pos;
+        }
+        self.active_pos = pos;
         let scale = match self.axis {
             Axis::X | Axis::Z => vec3(1.0, 0.0, 1.0),
             Axis::Y => vec3(0.0, 1.0, 0.0),
         };
 
         let origin = match self.axis {
-            Axis::X => vec3(state.saved_pos.x - 0.5, pos.y, pos.z),
+            Axis::X => vec3(self.pos.x - 0.5, pos.y, pos.z),
             Axis::Y => vec3(pos.x, 0.0, pos.z),
             Axis::Z => vec3(pos.x, pos.y, 0.0),
         };
@@ -198,6 +202,5 @@ impl ColorElement<InputState> for ColorAxis {
             Axis::X | Axis::Z => chunk,
             Axis::Y => vec3(chunk.x, state.pos.y, chunk.z),
         };
-        state.update_palette();
     }
 }

@@ -33,6 +33,7 @@ pub struct ColorScene {
     elements: Vec<Box<dyn ColorElement<InputState>>>,
     color_embedding: Rc<dyn Embedding<Vec3>>,
     space_embedding: Rc<dyn Embedding<Vec3>>,
+    prev_tag: u8,
 }
 
 impl ColorScene {
@@ -61,6 +62,7 @@ impl ColorScene {
             ],
             color_embedding,
             space_embedding,
+            prev_tag: 0,
         }
     }
 
@@ -122,13 +124,21 @@ impl Scene<InputState> for ColorScene {
             .read_color_partially::<[f32; 4]>(scissor_box)[0];
         let tag = pos[3] as u8;
         let pos = vec3(pos[0], pos[1], pos[2]);
+        if tag != self.prev_tag {
+            if self.prev_tag > 0 {
+                self.elements[self.prev_tag as usize - 1].exited();
+            }
+            if tag > 0 {
+                self.elements[tag as usize - 1].entered();
+            }
+            self.prev_tag = tag;
+        }
         if tag > 0 {
             state.pos = self.elements[tag as usize - 1].invert_space(pos);
             state.color = self.color_embedding.embed(pos);
             self.elements[tag as usize - 1].update_state(state);
         } else {
             state.pos = state.saved_pos;
-            state.update_palette();
         }
     }
 }
