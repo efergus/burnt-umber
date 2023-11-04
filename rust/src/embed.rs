@@ -1,24 +1,39 @@
 use std::f32::consts::PI;
 
 use cgmath::{vec2, vec3, InnerSpace};
-use palette::{FromColor, LinSrgb, Okhsv, Oklab, Okhsl};
+use palette::{FromColor, LinSrgb, Okhsl, Okhsv, Oklab};
 use three_d::Vec3;
 
 use crate::element::coloraxis::Axis;
+
+pub trait StaticEmbedding<T = Vec3> {
+    fn static_embed(pos: T) -> T;
+    fn static_invert(pos: T) -> T;
+}
 
 pub trait Embedding<T = Vec3> {
     fn embed(&self, pos: T) -> T;
     fn invert(&self, pos: T) -> T;
 }
 
+impl<T, U: StaticEmbedding<T>> Embedding<T> for U {
+    fn embed(&self, pos: T) -> T {
+        Self::static_embed(pos)
+    }
+
+    fn invert(&self, pos: T) -> T {
+        Self::static_invert(pos)
+    }
+}
+
 pub struct IdentityEmbedding {}
 
-impl Embedding<Vec3> for IdentityEmbedding {
-    fn embed(&self, pos: Vec3) -> Vec3 {
+impl StaticEmbedding<Vec3> for IdentityEmbedding {
+    fn static_embed(pos: Vec3) -> Vec3 {
         pos
     }
 
-    fn invert(&self, pos: Vec3) -> Vec3 {
+    fn static_invert(pos: Vec3) -> Vec3 {
         pos
     }
 }
@@ -73,8 +88,8 @@ impl Embedding<Vec3> for SwapAxesEmbedding {
 
 pub struct CylindricalEmbedding {}
 
-impl Embedding<Vec3> for CylindricalEmbedding {
-    fn embed(&self, pos: Vec3) -> Vec3 {
+impl StaticEmbedding<Vec3> for CylindricalEmbedding {
+    fn static_embed(pos: Vec3) -> Vec3 {
         let h = pos.x * PI * 2.0;
         let x = h.cos() * pos.z;
         let z = h.sin() * pos.z;
@@ -82,7 +97,7 @@ impl Embedding<Vec3> for CylindricalEmbedding {
         vec3(x, y, z)
     }
 
-    fn invert(&self, pos: Vec3) -> Vec3 {
+    fn static_invert(pos: Vec3) -> Vec3 {
         let r = vec2(pos.x, pos.z).magnitude();
         let h = (-pos.z.atan2(pos.x) / PI / 2.0).rem_euclid(1.0);
         let x = h;
@@ -94,14 +109,14 @@ impl Embedding<Vec3> for CylindricalEmbedding {
 
 pub struct OkhsvEmbedding {}
 
-impl Embedding<Vec3> for OkhsvEmbedding {
-    fn embed(&self, pos: Vec3) -> Vec3 {
+impl StaticEmbedding<Vec3> for OkhsvEmbedding {
+    fn static_embed(pos: Vec3) -> Vec3 {
         let hsv = Okhsv::new(pos.x * 360.0, pos.z, pos.y);
         let oklab = Oklab::from_color(hsv);
         vec3(oklab.l, oklab.a, oklab.b)
     }
 
-    fn invert(&self, pos: Vec3) -> Vec3 {
+    fn static_invert(pos: Vec3) -> Vec3 {
         let oklab = Oklab::new(pos.x, pos.y, pos.z);
         let hsv = Okhsv::from_color(oklab);
         let h = hsv.hue.into_positive_radians() / PI / 2.0;
@@ -113,14 +128,14 @@ impl Embedding<Vec3> for OkhsvEmbedding {
 
 pub struct OkhslEmbedding {}
 
-impl Embedding<Vec3> for OkhslEmbedding {
-    fn embed(&self, pos: Vec3) -> Vec3 {
+impl StaticEmbedding<Vec3> for OkhslEmbedding {
+    fn static_embed(pos: Vec3) -> Vec3 {
         let hsl: Okhsl = Okhsl::new(pos.x * 360.0, pos.z, pos.y);
         let oklab = Oklab::from_color(hsl);
         vec3(oklab.l, oklab.a, oklab.b)
     }
 
-    fn invert(&self, pos: Vec3) -> Vec3 {
+    fn static_invert(pos: Vec3) -> Vec3 {
         let oklab = Oklab::new(pos.x, pos.y, pos.z);
         let hsl = Okhsl::from_color(oklab);
         let h = hsl.hue.into_positive_radians() / PI / 2.0;
@@ -132,14 +147,14 @@ impl Embedding<Vec3> for OkhslEmbedding {
 
 pub struct LinSrgbOklabEmbedding {}
 
-impl Embedding<Vec3> for LinSrgbOklabEmbedding {
-    fn embed(&self, pos: Vec3) -> Vec3 {
+impl StaticEmbedding<Vec3> for LinSrgbOklabEmbedding {
+    fn static_embed(pos: Vec3) -> Vec3 {
         let lin_srgb = LinSrgb::new(pos.x, pos.y, pos.z);
         let oklab = Oklab::from_color(lin_srgb);
         vec3(oklab.l, oklab.a, oklab.b)
     }
 
-    fn invert(&self, pos: Vec3) -> Vec3 {
+    fn static_invert(pos: Vec3) -> Vec3 {
         let oklab = Oklab::new(pos.x, pos.y, pos.z);
         let lin_srgb = LinSrgb::from_color(oklab);
         let r = lin_srgb.red;

@@ -90,7 +90,7 @@ pub fn cube(
 }
 
 /// Pre-embedded cylinder, where x indicates turn, y indicates height, and z indicates radius.
-pub fn cylinder(
+pub fn _cylinder(
     horizontal_subdivisions: u32,
     vertical_subdivisions: u32,
     radial_subdivisions: u32,
