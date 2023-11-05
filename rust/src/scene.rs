@@ -8,6 +8,7 @@ use crate::{
         coloraxis::{Axis, ColorAxis},
         colorchips::ColorChips,
         colorspace::ColorSpace,
+        embedswitcher::EmbedSwitcher,
         ColorElement, ModelGraph, TaggedColorModel,
     },
     embed::{CylindricalEmbedding, Embedding, OkhsvEmbedding},
@@ -31,47 +32,26 @@ pub trait Scene<T> {
 pub struct ColorScene {
     cursor: Cursor,
     elements: Vec<Box<dyn ColorElement<InputState>>>,
-    color_embedding: Rc<dyn Embedding<Vec3>>,
-    space_embedding: Rc<dyn Embedding<Vec3>>,
     prev_tag: u8,
 }
 
 impl ColorScene {
-    fn new<T: Embedding + 'static, U: Embedding + 'static>(
-        context: &Context,
-        space_embedding: T,
-        color_embedding: U,
-    ) -> Self {
+    pub fn new(context: &Context) -> Self {
         let space = pre_embed::cube(48, 6, 2);
-        let space_embedding = Rc::new(space_embedding);
-        let color_embedding = Rc::new(color_embedding);
-        let space = ColorSpace::new(
-            context,
-            space,
-            space_embedding.clone(),
-            color_embedding.clone(),
-        );
+        let space = ColorSpace::new(context, space);
         Self {
             cursor: Cursor::cube(&context),
             elements: vec![
                 Box::new(space),
-                Box::new(ColorAxis::new(&context, Axis::X, color_embedding.clone())),
-                Box::new(ColorAxis::new(&context, Axis::Y, color_embedding.clone())),
-                Box::new(ColorAxis::new(&context, Axis::Z, color_embedding.clone())),
-                Box::new(ColorChips::new(&context, 6, 0.2, color_embedding.clone())),
+                Box::new(ColorAxis::new(&context, Axis::X)),
+                Box::new(ColorAxis::new(&context, Axis::Y)),
+                Box::new(ColorAxis::new(&context, Axis::Z)),
+                Box::new(ColorChips::new(&context, 6, 0.2)),
+                Box::new(EmbedSwitcher::new(&context, true, 0.0)),
+                Box::new(EmbedSwitcher::new(&context, false, 0.25)),
             ],
-            color_embedding,
-            space_embedding,
             prev_tag: 0,
         }
-    }
-
-    pub fn cylinder(context: &Context) -> Self {
-        // let space_embedding = ComposedEmbedding::new(
-        //     Box::new(SwapAxesEmbedding::new(Axis::X, Axis::Y)),
-        //     Box::new(LinSrgbOklabEmbedding {}));
-        // Self::new(context, space_embedding, LinSrgbOklabEmbedding {})
-        Self::new(context, CylindricalEmbedding {}, OkhsvEmbedding {})
     }
 
     pub fn render_graph(&self, target: &mut Target, graph: &ModelGraph, tag: u16) {
@@ -108,7 +88,7 @@ impl Scene<InputState> for ColorScene {
         target.program.render(
             screen,
             &self.cursor.model(&CursorState {
-                pos: self.space_embedding.embed(state.pos),
+                pos: state.space_embedding.embed(state.pos),
                 view: state.camera.projection() * state.camera.view(),
             }),
         );
@@ -134,8 +114,13 @@ impl Scene<InputState> for ColorScene {
             self.prev_tag = tag;
         }
         if tag > 0 {
-            state.pos = self.elements[tag as usize - 1].invert_space(pos);
-            state.color = self.color_embedding.embed(pos);
+            if state.press {
+                self.elements[tag as usize - 1].clicked();
+            }
+            if let Some(pos) = self.elements[tag as usize - 1].invert_space(pos) {
+                state.pos = pos;
+            }
+            state.color = state.color_embedding.embed(pos);
             self.elements[tag as usize - 1].update_state(state);
         } else {
             state.pos = state.saved_pos;
