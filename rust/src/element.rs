@@ -3,6 +3,7 @@ use three_d::{ElementBuffer, Mat4, RenderStates, Vec3, VertexBuffer};
 pub mod coloraxis;
 pub mod colorchips;
 pub mod colorspace;
+pub mod embedswitcher;
 
 pub enum ModelGraph<'a> {
     Color(ColorModel<'a>),
@@ -29,7 +30,10 @@ pub trait ColorElement<T> {
     fn update(&mut self, state: &T);
     fn entered(&mut self) {}
     fn exited(&mut self) {}
+    fn clicked(&mut self) {}
     fn update_state(&self, _state: &mut T) {}
     fn model(&self) -> ModelGraph;
-    fn invert_space(&self, pos: Vec3) -> Vec3;
+    fn invert_space(&self, _pos: Vec3) -> Option<Vec3> {
+        None
+    }
 }

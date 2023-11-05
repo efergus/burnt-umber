@@ -154,7 +154,7 @@ impl ColorView {
             Wrapping::ClampToEdge,
         );
         let state = InputState::new(vec3(1.0, 1.0, 1.0), camera);
-        let mut cylindrical_scene = ColorScene::cylinder(&context);
+        let mut cylindrical_scene = ColorScene::new(&context);
         cylindrical_scene.update(&state);
         let view = ColorView {
             window,
@@ -198,6 +198,7 @@ impl ColorView {
             let screen = input.screen();
             let state = &mut self.state;
             state.mouse_pos = self.position;
+            state.press = press;
             screen.clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 0.0, 1.0));
             let pos_target = RenderTarget::new(
                 self.pos_texture.as_color_target(None),

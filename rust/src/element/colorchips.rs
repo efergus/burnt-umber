@@ -3,7 +3,12 @@ use std::rc::Rc;
 use cgmath::{vec3, SquareMatrix, Zero};
 use three_d::{Context, Mat4, Vec3};
 
-use crate::{embed::Embedding, geometry::quad_mesh, input::InputState, mesh::Mesh};
+use crate::{
+    embed::{Embedding, IdentityEmbedding},
+    geometry::quad_mesh,
+    input::InputState,
+    mesh::Mesh,
+};
 
 use super::{ColorElement, ColorModel, ModelGraph};
 
@@ -18,12 +23,12 @@ pub struct ColorChips {
 }
 
 impl ColorChips {
-    pub fn new(context: &Context, count: usize, size: f32, embed: Rc<dyn Embedding>) -> Self {
+    pub fn new(context: &Context, count: usize, size: f32) -> Self {
         Self {
             positions: Mesh::from_positions(context, quad_mesh()),
             origin: Vec3::zero(),
             unit: vec3(0.5, -0.8, 0.0),
-            embed,
+            embed: Rc::new(IdentityEmbedding {}),
             count,
             size,
             hover: false,
@@ -36,6 +41,7 @@ impl ColorElement<InputState> for ColorChips {
         if !self.hover {
             self.origin = state.pos;
         }
+        self.embed = state.color_embedding.clone();
     }
 
     fn entered(&mut self) {
@@ -83,7 +89,7 @@ impl ColorElement<InputState> for ColorChips {
         ModelGraph::Vec(models)
     }
 
-    fn invert_space(&self, pos: Vec3) -> Vec3 {
-        pos
+    fn invert_space(&self, pos: Vec3) -> Option<Vec3> {
+        Some(pos)
     }
 }

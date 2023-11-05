@@ -6,14 +6,38 @@ use three_d::Vec3;
 
 use crate::element::coloraxis::Axis;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AxisRepresentation {
+    Cylindrical,
+    Linear,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChunkRepresentation {
+    Scale,
+    Clamp,
+}
+
 pub trait StaticEmbedding<T = Vec3> {
     fn static_embed(pos: T) -> T;
     fn static_invert(pos: T) -> T;
+    fn axis_representation() -> AxisRepresentation {
+        AxisRepresentation::Cylindrical
+    }
+    fn chunk_representation() -> ChunkRepresentation {
+        ChunkRepresentation::Scale
+    }
 }
 
 pub trait Embedding<T = Vec3> {
     fn embed(&self, pos: T) -> T;
     fn invert(&self, pos: T) -> T;
+    fn axis_representation(&self) -> AxisRepresentation {
+        AxisRepresentation::Cylindrical
+    }
+    fn chunk_representation(&self) -> ChunkRepresentation {
+        ChunkRepresentation::Scale
+    }
 }
 
 impl<T, U: StaticEmbedding<T>> Embedding<T> for U {
@@ -23,6 +47,14 @@ impl<T, U: StaticEmbedding<T>> Embedding<T> for U {
 
     fn invert(&self, pos: T) -> T {
         Self::static_invert(pos)
+    }
+
+    fn axis_representation(&self) -> AxisRepresentation {
+        Self::axis_representation()
+    }
+
+    fn chunk_representation(&self) -> ChunkRepresentation {
+        Self::chunk_representation()
     }
 }
 
@@ -36,16 +68,32 @@ impl StaticEmbedding<Vec3> for IdentityEmbedding {
     fn static_invert(pos: Vec3) -> Vec3 {
         pos
     }
+
+    fn axis_representation() -> AxisRepresentation {
+        AxisRepresentation::Linear
+    }
 }
 
 pub struct ComposedEmbedding {
     pub a: Box<dyn Embedding<Vec3>>,
     pub b: Box<dyn Embedding<Vec3>>,
+    pub axis_representation: AxisRepresentation,
+    pub chunk_representation: ChunkRepresentation,
 }
 
 impl ComposedEmbedding {
-    pub fn new(a: Box<dyn Embedding<Vec3>>, b: Box<dyn Embedding<Vec3>>) -> Self {
-        Self { a, b }
+    pub fn new(
+        a: Box<dyn Embedding<Vec3>>,
+        b: Box<dyn Embedding<Vec3>>,
+        axis_representation: AxisRepresentation,
+        chunk_representation: ChunkRepresentation,
+    ) -> Self {
+        Self {
+            a,
+            b,
+            axis_representation,
+            chunk_representation,
+        }
     }
 }
 
@@ -56,6 +104,14 @@ impl Embedding<Vec3> for ComposedEmbedding {
 
     fn invert(&self, pos: Vec3) -> Vec3 {
         self.b.invert(self.a.invert(pos))
+    }
+
+    fn axis_representation(&self) -> AxisRepresentation {
+        self.axis_representation
+    }
+
+    fn chunk_representation(&self) -> ChunkRepresentation {
+        self.chunk_representation
     }
 }
 
@@ -161,6 +217,10 @@ impl StaticEmbedding<Vec3> for LinSrgbOklabEmbedding {
         let g = lin_srgb.green;
         let b = lin_srgb.blue;
         vec3(r, g, b)
+    }
+
+    fn chunk_representation() -> ChunkRepresentation {
+        ChunkRepresentation::Clamp
     }
 }
 
