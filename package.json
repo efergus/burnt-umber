@@ -32,5 +32,9 @@
         "vite": "^4.4.2"
     },
     "type": "module",
-    "dependencies": {}
+    "dependencies": {
+        "@types/three": "^0.158.1",
+        "culori": "^3.2.0",
+        "three": "^0.158.0"
+    }
 }

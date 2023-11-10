@@ -1,15 +1,22 @@
-#version 300 es
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec4 a_position;
-in vec3 a_color;
 
-out vec3 v_position;
+uniform mat4 embedMatrix;
+
+out vec3 vColor;
+
+// FUNCTIONS
+
+vec3 cylindricalToCartesian(vec3 pos) {
+    float theta = pos.x;
+    float r = pos.z;
+    float y = pos.y;
+    return vec3(- r * cos(theta * PI * 2.0), y, r * sin(theta * PI * 2.0));
+}
 
 // all shaders have a main function
 void main() {
-    // gl_Position is a special variable a vertex shader
-    // is responsible for setting
-    gl_Position = a_position;
-    v_position = a_color;
+    vec3 vertPosition = (embedMatrix * vec4(position, 1.0)).xyz;
+    vec3 vertColor = vertPosition;
+    // REPLACE
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(vertPosition, 1.0);
+    vColor = vertColor;
 }

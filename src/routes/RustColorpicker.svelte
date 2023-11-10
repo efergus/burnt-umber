@@ -2,12 +2,7 @@
     import { sx } from '$lib/classes';
     import { spring } from 'svelte/motion';
     import '../app.css';
-    import Canvas from './Canvas.svelte';
-    // import Big from './Big.svelte';
-    import Center from './Center.svelte';
-    import Colorpicker from './Colorpicker.svelte';
-    import { onMount } from 'svelte';
-    // import { greet } from "wasm3d";
+    import RustCanvas from './RustCanvas.svelte';
 
     // greet("name");
     // console.log(new_canvas("string"));
@@ -29,7 +24,7 @@
 
 <div class="flex flex-col justify-center">
     <div class="w-96 h-96">
-        <Canvas bind:r bind:g bind:b bind:space />
+        <RustCanvas bind:r bind:g bind:b />
     </div>
     <button
         on:click={() => {

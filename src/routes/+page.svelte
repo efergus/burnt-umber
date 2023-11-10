@@ -1,10 +1,10 @@
 <script lang="ts">
     import '../app.css';
-    import Canvas from './Canvas.svelte';
     // import Big from './Big.svelte';
     import Center from './Center.svelte';
-    import Colorpicker from './Colorpicker.svelte';
+    import RustColorpicker from './RustColorpicker.svelte';
     import init from '$lib/rust/rust';
+    import ColorPicker from './ColorPicker.svelte';
 
     let wasm = init();
 </script>
@@ -14,7 +14,10 @@
         Loading
     {:then _}
         <Center horizontal={1}>
-            <Colorpicker />
+            <div class="flex gap-8 items-center">
+                <!-- <RustColorpicker /> -->
+                <ColorPicker />
+            </div>
         </Center>
     {/await}
 </div>

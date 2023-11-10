@@ -1,13 +1,7 @@
-#version 300 es
-    
-// fragment shaders don't have a default precision so we need
-// to pick one. highp is a good default. It means "high precision"
-precision highp float;
 
-in vec3 v_position;
-    
-// we need to declare an output for the fragment shader
-out vec4 outColor;
+in vec3 vColor;
+
+// FUNCTIONS
 
 float simple_srgbf(float x) {
     return pow(x, 1.0/2.2);
@@ -23,5 +17,7 @@ vec3 srgb(vec3 rgb) {
 }
     
 void main() {
-    outColor = vec4(srgb(v_position), 1.0);
+    vec3 fragColor = vColor;
+    // REPLACE
+    gl_FragColor = vec4(fragColor, 1.0);
 }
