@@ -85,6 +85,7 @@
         const pick = (x: number, y: number) => {
             // console.log(x, y);
             renderer.setRenderTarget(pickTarget);
+            renderer.clear();
             renderer.render(pickingScene, camera);
             const pixelBuffer = new Float32Array(4);
             const gl = renderer.getContext();
