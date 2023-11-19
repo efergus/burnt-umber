@@ -1,4 +1,6 @@
 
+uniform float tag;
+
 in vec3 vColor;
 
 // FUNCTIONS
@@ -12,12 +14,11 @@ float srgbf(float x) {
 }
 
 vec3 srgb(vec3 rgb) {
-    // rgb = vec3((rgb.xy + 1.0)/2.0, rgb.z);
     return vec3(srgbf(rgb.x), srgbf(rgb.y), srgbf(rgb.z));
 }
     
 void main() {
-    vec3 fragColor = vColor;
+    vec4 fragColor = vec4(vColor, 1.0);
     // REPLACE
-    gl_FragColor = vec4(fragColor, 1.0);
+    gl_FragColor = fragColor;
 }
