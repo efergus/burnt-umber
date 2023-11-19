@@ -6,18 +6,23 @@ export interface Embedding {
     invert?: (pos: THREE.Vector3) => THREE.Vector3;
 }
 
-export const hsv_shader = "fragColor.xyz = hsv2rgb(fragColor.xzy);"
-export const step_shader = "fragColor.xyz = vec3(step(fragColor.x, 0.5));"
-export const pick_shader = "fragColor.w = tag;"
-export const black_shader = "fragColor.xyz = vec3(0.0);"
+export const hsv_shader = 'fragColor.xyz = hsv2rgb(fragColor.xzy);';
+export const step_shader = 'fragColor.xyz = vec3(step(fragColor.x, 0.5));';
+export const pick_shader = 'fragColor.w = tag;';
+export const black_shader = 'fragColor.xyz = vec3(0.0);';
+export const tDiffuse_shader = 'fragColor.xyz = texture2D(tDiffuse, vUv).xyz;';
 
-export const cylindrical_shader = "vertPosition = cylindricalToCartesian(vertPosition);"
+export const cylindrical_shader = 'vertPosition = cylindricalToCartesian(vertPosition);';
 
 export function cylindricalToCartesian(pos: THREE.Vector3) {
     let theta = pos.x;
     let r = pos.z;
     let y = pos.y;
-    return new THREE.Vector3(- r * Math.cos(theta * Math.PI * 2.0), y, r * Math.sin(theta * Math.PI * 2.0));
+    return new THREE.Vector3(
+        -r * Math.cos(theta * Math.PI * 2.0),
+        y,
+        r * Math.sin(theta * Math.PI * 2.0)
+    );
 }
 
 export function cartestianToCylindrical(pos: THREE.Vector3) {
@@ -32,14 +37,14 @@ export function cartestianToCylindrical(pos: THREE.Vector3) {
 export const cylindrical: Embedding = {
     shader: cylindrical_shader,
     embed: cylindricalToCartesian,
-    invert: cartestianToCylindrical,
-}
+    invert: cartestianToCylindrical
+};
 
 export const hsv: Embedding = {
-    shader: hsv_shader,
-}
+    shader: hsv_shader
+};
 
 export default {
     cylindrical,
-    hsv,
-}
+    hsv
+};

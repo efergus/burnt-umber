@@ -1,5 +1,5 @@
-import { frag, vert } from "$lib/shaders";
-import { pick_shader, type Embedding, black_shader } from "$lib/shaders/embed";
+import { frag, vert } from '$lib/shaders';
+import { pick_shader, type Embedding, black_shader } from '$lib/shaders/embed';
 import * as THREE from 'three';
 
 interface Space extends ColorElement {
@@ -11,18 +11,19 @@ interface Space extends ColorElement {
 }
 
 export function space(space_embedding: Embedding, color_embedding: Embedding, tag: number): Space {
-
     const geometry = new THREE.BoxGeometry(1, 1, 1, 32, 8, 8);
     const cursor_geometry = new THREE.SphereGeometry(0.1, 8, 8);
     const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
     const embedMatrix = new THREE.Matrix4();
     embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
-    
+
     const material = new THREE.ShaderMaterial({
         vertexShader: vert(space_embedding.shader),
         fragmentShader: frag(color_embedding.shader),
         uniforms: {
             embedMatrix: { value: embedMatrix },
+            // modelViewMatrix: { value: new THREE.Matrix4().makeScale(400, 400, 0) },
+            // projectionMatrix: { value: new THREE.Matrix4().makeScale(1, 1, 0.1).multiply(new THREE.Matrix4().makeTranslation(0, 0, 5)) }
         }
     });
     const pick_material = new THREE.ShaderMaterial({
@@ -30,14 +31,14 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
         fragmentShader: frag(pick_shader),
         uniforms: {
             embedMatrix: { value: embedMatrix },
-            tag: { value: tag },
+            tag: { value: tag }
         }
     });
     const cursor_material = new THREE.ShaderMaterial({
         vertexShader: vert(),
         fragmentShader: frag(black_shader),
         uniforms: {
-            embedMatrix: { value: new THREE.Matrix4() },
+            embedMatrix: { value: new THREE.Matrix4() }
         }
     });
 
@@ -47,6 +48,7 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
 
     return {
         meshes: [mesh, cursor_mesh],
+        ortho_meshes: [],
         pick_meshes: [pick_mesh],
         space_embedding,
         color_embedding,
@@ -55,5 +57,5 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
             this.input_pos.copy(pos);
             cursor_mesh.position.copy(this.space_embedding.embed!(pos));
         }
-    }
+    };
 }

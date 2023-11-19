@@ -53,7 +53,6 @@
         console.log(view);
         // view.set_space(space);
         view.render_loop();
-        
     });
 </script>
 

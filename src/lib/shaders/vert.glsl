@@ -1,6 +1,7 @@
 
 uniform mat4 embedMatrix;
 
+varying vec2 vUv;
 out vec3 vColor;
 
 // FUNCTIONS
@@ -19,4 +20,5 @@ void main() {
     // REPLACE
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vertPosition, 1.0);
     vColor = vertColor;
+    vUv = uv;
 }

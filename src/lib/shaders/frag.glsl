@@ -1,6 +1,8 @@
 
 uniform float tag;
+uniform sampler2D tDiffuse;
 
+varying vec2 vUv;
 in vec3 vColor;
 
 // FUNCTIONS

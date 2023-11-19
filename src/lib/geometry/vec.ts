@@ -1,4 +1,3 @@
-
 import * as THREE from 'three';
 
 export function vec3(x: number, y: number, z: number): THREE.Vector3 {
@@ -22,5 +21,7 @@ export function cross(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3 {
 export const unit = {
     x: vec3(1, 0, 0),
     y: vec3(0, 1, 0),
-    z: vec3(0, 0, 1),
-}
+    z: vec3(0, 0, 1)
+};
+
+export const units = [unit.x, unit.y, unit.z];
