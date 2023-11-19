@@ -1,5 +1,5 @@
 import { frag, vert } from '$lib/shaders';
-import { pick_shader, type Embedding, black_shader } from '$lib/shaders/embed';
+import { pick_shader, type Embedding, black_shader, tDiffuse_shader } from '$lib/shaders/embed';
 import * as THREE from 'three';
 
 interface Space extends ColorElement {

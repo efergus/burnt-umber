@@ -6,9 +6,12 @@ export interface Embedding {
     invert?: (pos: THREE.Vector3) => THREE.Vector3;
 }
 
+export const rgb_shader = 'fragColor.xyz = fragColor.xyz;';
 export const hsv_shader = 'fragColor.xyz = hsv2rgb(fragColor.xzy);';
 export const step_shader = 'fragColor.xyz = vec3(step(fragColor.x, 0.5));';
 export const pick_shader = 'fragColor.w = tag;';
+export const white_shader = 'fragColor.xyz = vec3(1.0);';
+export const grey_shader = 'fragColor.xyz = vec3(0.5);';
 export const black_shader = 'fragColor.xyz = vec3(0.0);';
 export const tDiffuse_shader = 'fragColor.xyz = texture2D(tDiffuse, vUv).xyz;';
 

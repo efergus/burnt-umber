@@ -23,7 +23,7 @@ export class Axis {
         const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
         const cursor_geometry = new THREE.SphereGeometry(0.1, 8, 8);
         const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
-        const embedMatrix = new THREE.Matrix4();
+        const embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.multiplyScalar(-1));
         console.log(...boundingBox.min);
         // embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
         if (axis == AXIS.X) {
@@ -58,6 +58,8 @@ export class Axis {
         const mesh = new THREE.Mesh(geometry, material);
         const pick_mesh = new THREE.Mesh(geometry.clone(), pick_material);
         const cursor_mesh = new THREE.Mesh(cursor_geometry, cursor_material);
+
+        mesh.position.z = 1;
 
         return {
             meshes: [],

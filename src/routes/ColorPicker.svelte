@@ -1,7 +1,7 @@
 <script lang="ts">
     import * as THREE from 'three';
     import { frag, vert } from '$lib/shaders';
-    import embed, { tDiffuse_shader } from '$lib/shaders/embed';
+    import embed, { black_shader, cylindrical_shader, grey_shader, hsv_shader, rgb_shader, tDiffuse_shader, white_shader } from '$lib/shaders/embed';
     import { space } from '$lib/element/space';
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
@@ -24,7 +24,9 @@
         const controller = cameraController(camera);
         const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
         orthoCamera.position.z = 1;
+        orthoCamera.lookAt(0, 0, 0);
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        // renderer.setClearColor(0x000000, 0);
         renderer.setSize(rect.width, rect.height);
         renderer.autoClear = false;
 
@@ -38,23 +40,28 @@
             type: THREE.FloatType
         });
         pickTarget.texture.generateMipmaps = false;
-        const orthoTarget = new THREE.WebGLRenderTarget(rect.width, rect.height);
+        const orthoTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
+            format: THREE.RGBAFormat,
+        });
         orthoTarget.texture.generateMipmaps = false;
-        // orthoRenderer.setRenderTarget(orthoTarget);
 
+        const colorspace = space(embed.cylindrical, embed.hsv, 1);
+        const axis = Axis.new(embed.hsv, 1, AXIS.X);
+
+        // console.log(tDiffuse_shader);
         const plane = new THREE.PlaneGeometry(2, 2);
         const orthoMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 tDiffuse: { value: orthoTarget.texture }
             },
             vertexShader: vert(),
-            fragmentShader: frag(tDiffuse_shader),
+            fragmentShader: frag(white_shader),
+            depthTest: false,
+            depthWrite: false
         });
         const orthoMesh = new THREE.Mesh(plane, orthoMaterial);
+        orthoMesh.position.z = 0;
         screenScene.add(orthoMesh);
-
-        const colorspace = space(embed.cylindrical, embed.hsv, 1);
-        const axis = Axis.new(embed.hsv, 1, AXIS.X);
 
         scene.add(...colorspace.meshes, ...axis.meshes);
         orthoScene.add(...colorspace.ortho_meshes, ...axis.ortho_meshes);
@@ -73,13 +80,13 @@
             last_time = now;
             requestAnimationFrame(animate);
 
+            renderer.clear();
             renderer.setRenderTarget(orthoTarget);
+            // renderer.setRenderTarget(null);
             renderer.render(orthoScene, orthoCamera);
     
             renderer.setRenderTarget(null);
-            renderer.clear();
             renderer.render(screenScene, orthoCamera);
-
             renderer.render(scene, camera);
         };
         const pick = (x: number, y: number) => {

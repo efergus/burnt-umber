@@ -18,7 +18,7 @@ export interface CameraController {
 
 export function cameraController(camera: THREE.PerspectiveCamera): CameraController {
     const controller = {
-        theta: 0,
+        theta: Math.PI/2,
         phi: 1,
         radius: 4,
         lookAt: new THREE.Vector3(0, 1, 0),
