@@ -21,7 +21,7 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
         vertexShader: vert(space_embedding.shader),
         fragmentShader: frag(color_embedding.shader),
         uniforms: {
-            embedMatrix: { value: embedMatrix },
+            embedMatrix: { value: embedMatrix }
             // modelViewMatrix: { value: new THREE.Matrix4().makeScale(400, 400, 0) },
             // projectionMatrix: { value: new THREE.Matrix4().makeScale(1, 1, 0.1).multiply(new THREE.Matrix4().makeTranslation(0, 0, 5)) }
         }

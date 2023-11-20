@@ -5,6 +5,7 @@
     import RustColorpicker from './RustColorpicker.svelte';
     import init from '$lib/rust/rust';
     import ColorPicker from './ColorPicker.svelte';
+    import Rtt from './RTT.svelte';
 
     let wasm = init();
 </script>
@@ -16,6 +17,7 @@
         <Center horizontal={1}>
             <div class="flex gap-8 items-center">
                 <!-- <RustColorpicker /> -->
+                <Rtt />
                 <ColorPicker />
             </div>
         </Center>

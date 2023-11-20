@@ -1,7 +1,15 @@
 <script lang="ts">
     import * as THREE from 'three';
     import { frag, vert } from '$lib/shaders';
-    import embed, { black_shader, cylindrical_shader, grey_shader, hsv_shader, rgb_shader, tDiffuse_shader, white_shader } from '$lib/shaders/embed';
+    import embed, {
+        black_shader,
+        cylindrical_shader,
+        grey_shader,
+        hsv_shader,
+        rgb_shader,
+        tDiffuse_shader,
+        white_shader
+    } from '$lib/shaders/embed';
     import { space } from '$lib/element/space';
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
@@ -41,21 +49,21 @@
         });
         pickTarget.texture.generateMipmaps = false;
         const orthoTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
-            format: THREE.RGBAFormat,
+            format: THREE.RGBAFormat
         });
         orthoTarget.texture.generateMipmaps = false;
 
         const colorspace = space(embed.cylindrical, embed.hsv, 1);
         const axis = Axis.new(embed.hsv, 1, AXIS.X);
 
-        // console.log(tDiffuse_shader);
         const plane = new THREE.PlaneGeometry(2, 2);
         const orthoMaterial = new THREE.ShaderMaterial({
             uniforms: {
-                tDiffuse: { value: orthoTarget.texture }
+                tDiffuse: { value: orthoTarget.texture },
+                embedMatrix: { value: new THREE.Matrix4() }
             },
             vertexShader: vert(),
-            fragmentShader: frag(white_shader),
+            fragmentShader: frag(rgb_shader),
             depthTest: false,
             depthWrite: false
         });
@@ -80,17 +88,16 @@
             last_time = now;
             requestAnimationFrame(animate);
 
-            renderer.clear();
             renderer.setRenderTarget(orthoTarget);
             // renderer.setRenderTarget(null);
             renderer.render(orthoScene, orthoCamera);
-    
+
+            renderer.clear();
             renderer.setRenderTarget(null);
             renderer.render(screenScene, orthoCamera);
             renderer.render(scene, camera);
         };
         const pick = (x: number, y: number) => {
-            // console.log(x, y);
             renderer.setRenderTarget(pickTarget);
             renderer.clear();
             renderer.render(pickingScene, camera);
@@ -100,9 +107,6 @@
                 console.error('No context!');
                 return;
             }
-            // console.log(gl);
-            // console.log(gl.getRenderbufferParameter(gl.RENDERBUFFER, gl.RENDERBUFFER_INTERNAL_FORMAT));
-            // console.log(gl.getParameter(gl.VIEWPORT));
             gl.readPixels(x, y, 1, 1, gl.RGBA, gl.FLOAT, pixelBuffer);
             if (pixelBuffer[3] === 0) {
                 renderer.setRenderTarget(null);
@@ -110,16 +114,6 @@
             }
 
             const colorPosition = new THREE.Vector3(pixelBuffer[0], pixelBuffer[1], pixelBuffer[2]);
-            // const spacePosition = cylindricalToCartesian(colorPosition);
-            // console.log(pixelBuffer[3]);
-            // const cursorEmbed = new THREE.Matrix4();
-            // cursorEmbed.makeTranslation(cursorPosition);
-
-            // console.log("Color", ...colorPosition)
-            // state.selected.copy(colorPosition);
-            // cursor.position.copy(cursorPosition);
-            // state.space.copy(cursorPosition);
-            // cursor.material.uniformsNeedUpdate = true;
             renderer.setRenderTarget(null);
             return {
                 color: colorPosition
@@ -131,74 +125,20 @@
             const rect = canvas.getBoundingClientRect();
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             console.log(e.button);
-            // if (picked && e.button === 2) {
-            //     const diff = picked.space.clone();
-            //     diff.sub(camera_state.lookAt);
-            //     camera_state.lookAt.copy(picked.space);
-            //     camera.position.add(diff);
-            // }
         };
         canvas.onmousemove = (e) => {
             const rect = canvas.getBoundingClientRect();
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             if (picked) {
-                // console.log(...picked.space)
-                // state.selected.copy(picked.color);
-                // state.space.copy(picked.space);
-                // cursor.position.copy(state.space);
                 colorspace.on_input_change(picked.color);
             }
             if (!e.buttons) {
                 return;
             }
             controller.on_move(new THREE.Vector3(e.movementX, e.movementY, 0.0));
-            // const radius = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
-            // let theta = Math.atan2(camera.position.y, radius);
-            // let phi = Math.atan2(camera.position.z, camera.position.x);
-            // const pos = camera.position.clone();
-            // pos.sub(camera_state.lookAt);
-            // const unit_x = pos.clone();
-            // const unit_y = pos.clone();
-            // unit_x.cross(camera_state.up);
-            // unit_y.cross(unit_x);
-            // unit_x.normalize();
-            // unit_y.normalize();
-            // // console.log(e.buttons);
-            // const xz_radius = Math.sqrt(pos.x ** 2 + pos.z ** 2);
-            // const dx = e.movementX / rect.width * xz_radius * Math.PI;
-            // const dy = - e.movementY / rect.width * camera_state.radius * Math.PI;
-            // pos.addScaledVector(unit_x, dx);
-            // pos.addScaledVector(unit_y, dy);
-            // pos.multiplyScalar(camera_state.radius / pos.length());
-            // pos.add(camera_state.lookAt);
-            // camera.position.copy(pos);
-            // pos.copy(camera.position);
-            // pos.sub(camera_state.lookAt);
-            // const up = unit_x.clone();
-            // up.cross(pos).normalize();
-            // if(up.dot(unit.y) > 0.2) {
-
-            // }
-            // camera_state.up.copy(up);
-            // console.log(camera_state);
-
-            // camera.position.x += dx;
-            // camera.position.y -= dy;
-            // cube.rotation.x += dy * 2;
-            // cube.rotation.z += dx * 2;
         };
         canvas.onwheel = (e) => {
             const dy = e.deltaY / 10;
-            // camera_state.radius += dy / 10;
-            // camera_state.radius = Math.min(Math.max(camera_state.radius, 0.1), 4);
-
-            // const diff = camera.position.clone();
-            // diff.sub(state.space);
-            // diff.multiplyScalar(1-Math.exp(-camera_state.radius));
-            // camera.position.addScaledVector(diff, dy/100);
-            // const pos = camera.position.clone();
-            // pos.sub(camera_state.lookAt);
-            // camera_state.radius = pos.length();
             controller.on_move(new THREE.Vector3(0, 0, dy));
         };
         animate();

@@ -34,7 +34,7 @@ export class Axis {
             vertexShader: vert(),
             fragmentShader: frag(color_embedding.shader),
             uniforms: {
-                embedMatrix: { value: embedMatrix },
+                embedMatrix: { value: embedMatrix }
                 // modelViewMatrix: { value: new THREE.Matrix4() },
                 // projectionMatrix: { value: new THREE.Matrix4().makeTranslation(0, 0, 5) }
             }
