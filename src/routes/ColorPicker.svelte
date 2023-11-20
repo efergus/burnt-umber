@@ -26,8 +26,8 @@
         const rect = canvas.getBoundingClientRect();
         const scene = new THREE.Scene();
         const orthoScene = new THREE.Scene();
-        const screenScene = new THREE.Scene();
         const pickingScene = new THREE.Scene();
+        const orthoPickingScene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.01, 100);
         const controller = cameraController(camera);
         const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
@@ -54,31 +54,18 @@
         orthoTarget.texture.generateMipmaps = false;
 
         const colorspace = space(embed.cylindrical, embed.hsv, 1);
-        const axis = Axis.new(embed.hsv, 1, AXIS.X);
+        const axes = [
+            Axis.new(embed.hsv, 1, AXIS.X),
+            Axis.new(embed.hsv, 1, AXIS.Y),
+            Axis.new(embed.hsv, 1, AXIS.Z)
+        ];
 
-        const plane = new THREE.PlaneGeometry(2, 2);
-        const orthoMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                tDiffuse: { value: orthoTarget.texture },
-                embedMatrix: { value: new THREE.Matrix4() }
-            },
-            vertexShader: vert(),
-            fragmentShader: frag(rgb_shader),
-            depthTest: false,
-            depthWrite: false
-        });
-        const orthoMesh = new THREE.Mesh(plane, orthoMaterial);
-        orthoMesh.position.z = 0;
-        screenScene.add(orthoMesh);
-
-        scene.add(...colorspace.meshes, ...axis.meshes);
-        orthoScene.add(...colorspace.ortho_meshes, ...axis.ortho_meshes);
-        pickingScene.add(...colorspace.pick_meshes, ...axis.pick_meshes);
-
-        const state = {
-            selected: new THREE.Vector3(0, 0, 0),
-            space: new THREE.Vector3(0, 0, 0)
-        };
+        scene.add(...colorspace.meshes);
+        pickingScene.add(...colorspace.pick_meshes);
+        for (const axis of axes) {
+            orthoScene.add(...axis.meshes);
+            orthoPickingScene.add(...axis.pick_meshes);
+        }
 
         const start_time = Date.now();
         let last_time = Date.now();
@@ -88,19 +75,17 @@
             last_time = now;
             requestAnimationFrame(animate);
 
-            renderer.setRenderTarget(orthoTarget);
-            // renderer.setRenderTarget(null);
+            renderer.setRenderTarget(null);
+            renderer.clear();
             renderer.render(orthoScene, orthoCamera);
 
-            renderer.clear();
-            renderer.setRenderTarget(null);
-            renderer.render(screenScene, orthoCamera);
             renderer.render(scene, camera);
         };
         const pick = (x: number, y: number) => {
             renderer.setRenderTarget(pickTarget);
             renderer.clear();
             renderer.render(pickingScene, camera);
+            renderer.render(orthoPickingScene, orthoCamera);
             const pixelBuffer = new Float32Array(4);
             const gl = renderer.getContext();
             if (!gl) {
@@ -131,6 +116,9 @@
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             if (picked) {
                 colorspace.on_input_change(picked.color);
+                for (const axis of axes) {
+                    axis.on_input_change(picked.color);
+                }
             }
             if (!e.buttons) {
                 return;

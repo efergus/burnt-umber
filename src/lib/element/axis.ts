@@ -24,19 +24,12 @@ export class Axis {
         const cursor_geometry = new THREE.SphereGeometry(0.1, 8, 8);
         const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
         const embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.multiplyScalar(-1));
-        console.log(...boundingBox.min);
-        // embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
-        if (axis == AXIS.X) {
-            // embedMatrix.multiply(new THREE.Matrix4().makeScale(1, 1, 1));
-        }
 
         const material = new THREE.ShaderMaterial({
             vertexShader: vert(),
             fragmentShader: frag(color_embedding.shader),
             uniforms: {
                 embedMatrix: { value: embedMatrix }
-                // modelViewMatrix: { value: new THREE.Matrix4() },
-                // projectionMatrix: { value: new THREE.Matrix4().makeTranslation(0, 0, 5) }
             }
         });
         const pick_material = new THREE.ShaderMaterial({
@@ -59,16 +52,53 @@ export class Axis {
         const pick_mesh = new THREE.Mesh(geometry.clone(), pick_material);
         const cursor_mesh = new THREE.Mesh(cursor_geometry, cursor_material);
 
-        mesh.position.z = 1;
+        if (axis == AXIS.X) {
+            mesh.scale.y = 0.2;
+            mesh.position.y = 0.9;
+            cursor_mesh.position.y = 0.9;
+        } else if (axis == AXIS.Y) {
+            mesh.scale.x = 0.2;
+            mesh.position.x = -0.9;
+            cursor_mesh.position.x = -0.9;
+        } else if (axis == AXIS.Z) {
+            mesh.scale.y = 0.2;
+            mesh.position.y = -0.9;
+            cursor_mesh.position.y = -0.9;
+        } else {
+            throw new Error(`Unknown axis ${axis}`);
+        }
+
+        pick_mesh.scale.copy(mesh.scale);
+        pick_mesh.position.copy(mesh.position);
 
         return {
-            meshes: [],
-            ortho_meshes: [mesh, cursor_mesh],
-            pick_meshes: [],
+            ortho: true,
+            meshes: [mesh, cursor_mesh],
+            pick_meshes: [pick_mesh],
             color_embedding,
             input_pos: new THREE.Vector3(),
             on_input_change(pos: THREE.Vector3) {
                 this.input_pos.copy(pos);
+                if (axis == AXIS.X) {
+                    const embedMatrix = new THREE.Matrix4().makeTranslation(0, pos.y, pos.z);
+                    embedMatrix.multiply(new THREE.Matrix4().makeScale(1, 0, 0));
+                    mesh.material.uniforms.embedMatrix.value = embedMatrix;
+                    cursor_mesh.position.x = pos.x - 0.5;
+                } else if (axis == AXIS.Y) {
+                    const embedMatrix = new THREE.Matrix4().makeTranslation(
+                        pos.x,
+                        boundingBox.min.y,
+                        pos.z
+                    );
+                    embedMatrix.multiply(new THREE.Matrix4().makeScale(0, 1, 0));
+                    mesh.material.uniforms.embedMatrix.value = embedMatrix;
+                    cursor_mesh.position.y = pos.y - 0.5;
+                } else if (axis == AXIS.Z) {
+                    const embedMatrix = new THREE.Matrix4().makeTranslation(pos.x, pos.y, 0);
+                    embedMatrix.multiply(new THREE.Matrix4().makeScale(0, 0, 1));
+                    mesh.material.uniforms.embedMatrix.value = embedMatrix;
+                    cursor_mesh.position.x = pos.z - 0.5;
+                }
                 // cursor_mesh.position.copy(this.space_embedding.embed!(pos));
             }
         };

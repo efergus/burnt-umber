@@ -1,5 +1,11 @@
 import { frag, vert } from '$lib/shaders';
-import { pick_shader, type Embedding, black_shader, tDiffuse_shader } from '$lib/shaders/embed';
+import {
+    pick_shader,
+    type Embedding,
+    black_shader,
+    tDiffuse_shader,
+    embed_shader
+} from '$lib/shaders/embed';
 import * as THREE from 'three';
 
 interface Space extends ColorElement {
@@ -18,7 +24,7 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
     embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
     const material = new THREE.ShaderMaterial({
-        vertexShader: vert(space_embedding.shader),
+        vertexShader: vert(embed_shader, space_embedding.shader),
         fragmentShader: frag(color_embedding.shader),
         uniforms: {
             embedMatrix: { value: embedMatrix }
@@ -27,7 +33,7 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
         }
     });
     const pick_material = new THREE.ShaderMaterial({
-        vertexShader: vert(space_embedding.shader),
+        vertexShader: vert(embed_shader, space_embedding.shader),
         fragmentShader: frag(pick_shader),
         uniforms: {
             embedMatrix: { value: embedMatrix },
@@ -48,7 +54,6 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
 
     return {
         meshes: [mesh, cursor_mesh],
-        ortho_meshes: [],
         pick_meshes: [pick_mesh],
         space_embedding,
         color_embedding,

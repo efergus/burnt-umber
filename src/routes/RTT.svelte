@@ -23,7 +23,7 @@
     $: init(canvas);
 
     function init(canvas) {
-        if(!canvas) return;
+        if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
         camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 10000);
         camera.position.z = 100;
@@ -61,7 +61,10 @@
         });
 
         const materialScreen = new THREE.ShaderMaterial({
-            uniforms: { tDiffuse: { value: rtTexture.texture }, embedMatrix: { value: new THREE.Matrix4() } },
+            uniforms: {
+                tDiffuse: { value: rtTexture.texture },
+                embedMatrix: { value: new THREE.Matrix4() }
+            },
             vertexShader: vert(),
             fragmentShader: frag(tDiffuse_shader),
 
@@ -119,11 +122,10 @@
             }
         }
 
-        renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
         renderer.setSize(rect.width, rect.height);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.autoClear = false;
-
 
         document.addEventListener('mousemove', onDocumentMouseMove);
 

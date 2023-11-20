@@ -15,10 +15,10 @@ vec3 cylindricalToCartesian(vec3 pos) {
 
 // all shaders have a main function
 void main() {
-    vec3 vertPosition = (embedMatrix * vec4(position, 1.0)).xyz;
-    vec3 vertColor = vertPosition;
+    vec3 vertPosition = position;
+    vec3 vertEmbed = (embedMatrix * vec4(vertPosition, 1.0)).xyz;
     // REPLACE
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vertPosition, 1.0);
-    vColor = vertColor;
+    vColor = vertEmbed;
     vUv = uv;
 }

@@ -15,6 +15,7 @@ export const grey_shader = 'fragColor.xyz = vec3(0.5);';
 export const black_shader = 'fragColor.xyz = vec3(0.0);';
 export const tDiffuse_shader = 'fragColor.xyz = texture2D(tDiffuse, vUv).xyz;';
 
+export const embed_shader = 'vertPosition = vertEmbed;';
 export const cylindrical_shader = 'vertPosition = cylindricalToCartesian(vertPosition);';
 
 export function cylindricalToCartesian(pos: THREE.Vector3) {
