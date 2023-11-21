@@ -10,10 +10,12 @@
         tDiffuse_shader,
         white_shader
     } from '$lib/shaders/embed';
-    import { space } from '$lib/element/space';
+    import { space, type Space } from '$lib/element/space';
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
+    export let color = [1, 1, 1];
     let canvas: HTMLCanvasElement;
+    let colorspace: Space;
 
     const unit = {
         x: new THREE.Vector3(1, 0, 0),
@@ -38,11 +40,6 @@
         renderer.setSize(rect.width, rect.height);
         renderer.autoClear = false;
 
-        const geometry = new THREE.BoxGeometry(1, 1, 1, 32, 8, 8);
-        const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
-        const embedMatrix = new THREE.Matrix4();
-        embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
-
         const pickTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
             format: THREE.RGBAFormat,
             type: THREE.FloatType
@@ -53,7 +50,7 @@
         });
         orthoTarget.texture.generateMipmaps = false;
 
-        const colorspace = space(embed.cylindrical, embed.hsv, 1);
+        colorspace = space(embed.cylindrical, embed.hsv, 1);
         const axes = [
             Axis.new(embed.hsv, 1, AXIS.X),
             Axis.new(embed.hsv, 1, AXIS.Y),
@@ -98,7 +95,8 @@
                 return;
             }
 
-            const colorPosition = new THREE.Vector3(pixelBuffer[0], pixelBuffer[1], pixelBuffer[2]);
+            color = [pixelBuffer[0], pixelBuffer[1], pixelBuffer[2]];
+            const colorPosition = new THREE.Vector3(...color);
             renderer.setRenderTarget(null);
             return {
                 color: colorPosition
@@ -133,6 +131,7 @@
     };
 
     $: start(canvas);
+    $: colorspace?.on_input_change(new THREE.Vector3(...color));
 </script>
 
 <div class="w-96 h-96 border bg-gray-400">

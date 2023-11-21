@@ -54,16 +54,16 @@ export class Axis {
 
         if (axis == AXIS.X) {
             mesh.scale.y = 0.2;
-            mesh.position.y = 0.9;
-            cursor_mesh.position.y = 0.9;
+            // mesh.position.y = 0.9;
+            // cursor_mesh.position.y = 0.9;
         } else if (axis == AXIS.Y) {
             mesh.scale.x = 0.2;
-            mesh.position.x = -0.9;
-            cursor_mesh.position.x = -0.9;
+            // mesh.position.x = -0.9;
+            // cursor_mesh.position.x = -0.9;
         } else if (axis == AXIS.Z) {
             mesh.scale.y = 0.2;
-            mesh.position.y = -0.9;
-            cursor_mesh.position.y = -0.9;
+            // mesh.position.y = -0.9;
+            // cursor_mesh.position.y = -0.9;
         } else {
             throw new Error(`Unknown axis ${axis}`);
         }
@@ -96,10 +96,10 @@ export class Axis {
                 } else if (axis == AXIS.Z) {
                     const embedMatrix = new THREE.Matrix4().makeTranslation(pos.x, pos.y, 0);
                     embedMatrix.multiply(new THREE.Matrix4().makeScale(0, 0, 1));
+                    embedMatrix.multiply(new THREE.Matrix4().makeRotationY(-Math.PI / 2));
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
                     cursor_mesh.position.x = pos.z - 0.5;
                 }
-                // cursor_mesh.position.copy(this.space_embedding.embed!(pos));
             }
         };
     }

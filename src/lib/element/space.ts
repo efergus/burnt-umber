@@ -8,7 +8,7 @@ import {
 } from '$lib/shaders/embed';
 import * as THREE from 'three';
 
-interface Space extends ColorElement {
+export interface Space extends ColorElement {
     space_embedding: Embedding;
     color_embedding: Embedding;
     input_pos: THREE.Vector3;
