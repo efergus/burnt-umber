@@ -80,7 +80,7 @@ export class Axis {
             on_input_change(pos: THREE.Vector3) {
                 this.input_pos.copy(pos);
                 if (axis == AXIS.X) {
-                    const embedMatrix = new THREE.Matrix4().makeTranslation(0, pos.y, pos.z);
+                    const embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.x, pos.y, pos.z);
                     embedMatrix.multiply(new THREE.Matrix4().makeScale(1, 0, 0));
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
                     cursor_mesh.position.x = pos.x - 0.5;
@@ -94,9 +94,10 @@ export class Axis {
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
                     cursor_mesh.position.y = pos.y - 0.5;
                 } else if (axis == AXIS.Z) {
-                    const embedMatrix = new THREE.Matrix4().makeTranslation(pos.x, pos.y, 0);
-                    embedMatrix.multiply(new THREE.Matrix4().makeScale(0, 0, 1));
-                    embedMatrix.multiply(new THREE.Matrix4().makeRotationY(-Math.PI / 2));
+                    let embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.x, 0, 0);
+                    embedMatrix = new THREE.Matrix4().makeRotationY(-Math.PI / 2).multiply(embedMatrix);
+                    embedMatrix = new THREE.Matrix4().makeScale(0, 0, 1).multiply(embedMatrix);
+                    embedMatrix = new THREE.Matrix4().makeTranslation(pos.x, pos.y, 0).multiply(embedMatrix);
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
                     cursor_mesh.position.x = pos.z - 0.5;
                 }

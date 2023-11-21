@@ -14,9 +14,11 @@
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
     import { cx } from '$lib/classes';
+    import { vec3 } from '$lib/geometry/vec';
     export let axis: AXIS;
     export let color = [0.5, 1, 1];
     let canvas: HTMLCanvasElement;
+    let axisElement: Axis;
 
     const classnames = cx('border bg-gray-400', axis === AXIS.Y ? 'w-8 h-96' : 'w-96 h-8');
 
@@ -48,7 +50,8 @@
         const embedMatrix = new THREE.Matrix4();
         embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
-        const axisElement = Axis.new(embed.hsv, 1, axis);
+        axisElement = Axis.new(embed.hsv, 1, axis);
+        axisElement.on_input_change(vec3(...color));
 
         scene.add(...axisElement.meshes);
 
@@ -67,7 +70,6 @@
         const pick = (x: number, y: number) => {
             const px = x / rect.width;
             const py = y / rect.height;
-            console.log(px, py);
             if (axis === AXIS.Y) {
                 color[1] = py;
             } else {
@@ -98,6 +100,7 @@
     };
 
     $: start(canvas);
+    $: axisElement?.on_input_change(vec3(...color));
 </script>
 
 <div class={classnames}>
