@@ -8,6 +8,7 @@
     import Rtt from './RTT.svelte';
     import ColorAxis from './ColorAxis.svelte';
     import { AXIS } from '$lib/element/axis';
+    import ColorChip from './ColorChip.svelte';
     let color = [0.5, 1, 1];
 
     let wasm = init();
@@ -24,7 +25,7 @@
                 <div class="grid grid-cols-3">
                     <div />
                     <ColorAxis bind:color axis={AXIS.X} />
-                    <div />
+                    <ColorChip color={color} />
                     <ColorAxis bind:color axis={AXIS.Y} />
                     <ColorPicker bind:color />
                     <div />

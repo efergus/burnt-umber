@@ -29,7 +29,7 @@ const to_color_arr = (v: val): string[] =>
           )
         : to_color_arr([v, v, v, 1]);
 
-const to_color = (v: val): string => `rgba(${to_color_arr(v).join(', ')})`;
+const to_color = (v: val): string => typeof v === "string" ? v : `rgba(${to_color_arr(v).join(', ')})`;
 
 const to_px = (v: val) => `${v}${typeof v === 'number' ? 'px' : ''}`;
 
