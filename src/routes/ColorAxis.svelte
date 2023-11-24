@@ -20,7 +20,7 @@
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
 
-    const classnames = cx('border bg-gray-400', axis === AXIS.Y ? 'w-8 h-96' : 'w-96 h-8');
+    // const classnames = cx('border bg-gray-400', axis === AXIS.Y ? 'w-16 h-96' : 'w-96 h-16');
 
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
@@ -103,6 +103,6 @@
     $: axisElement?.on_input_change(vec3(...color));
 </script>
 
-<div class={classnames}>
+<div class="w-full h-full">
     <canvas class="w-full h-full" bind:this={canvas} />
 </div>

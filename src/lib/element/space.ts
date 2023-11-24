@@ -17,7 +17,7 @@ export interface Space extends ColorElement {
 }
 
 export function space(space_embedding: Embedding, color_embedding: Embedding, tag: number): Space {
-    const geometry = new THREE.BoxGeometry(1, 1, 1, 32, 8, 8);
+    const geometry = new THREE.BoxGeometry(1, 1, 1, 64, 8, 8);
     const cursor_geometry = new THREE.SphereGeometry(0.1, 8, 8);
     const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
     const embedMatrix = new THREE.Matrix4();

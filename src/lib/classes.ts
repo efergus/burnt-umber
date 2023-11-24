@@ -38,7 +38,7 @@ const sx_mapper = (k: string, v: val) => {
     if (typeof fn === 'function') {
         return fn(v, k).join('; ');
     }
-    return `${fn ?? k.replace('_', '-')}: ${to_px(v)}`;
+    return `${fn ?? k.replace(/_/g, '-')}: ${to_px(v)}`;
 };
 
 export const sx = (obj: Record<string, val>) =>

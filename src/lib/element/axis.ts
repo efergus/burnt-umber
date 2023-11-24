@@ -21,7 +21,7 @@ export class Axis {
         axis: AXIS
     ): Axis {
         const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
-        const cursor_geometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const cursor_geometry = new THREE.SphereGeometry(0.05, 8, 8);
         const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
         const embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.multiplyScalar(-1));
 

@@ -17,12 +17,6 @@
     let canvas: HTMLCanvasElement;
     let colorspace: Space;
 
-    const unit = {
-        x: new THREE.Vector3(1, 0, 0),
-        y: new THREE.Vector3(0, 1, 0),
-        z: new THREE.Vector3(0, 0, 1)
-    };
-
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
@@ -51,18 +45,9 @@
         orthoTarget.texture.generateMipmaps = false;
 
         colorspace = space(embed.cylindrical, embed.hsv, 1);
-        const axes = [
-            Axis.new(embed.hsv, 1, AXIS.X),
-            Axis.new(embed.hsv, 1, AXIS.Y),
-            Axis.new(embed.hsv, 1, AXIS.Z)
-        ];
 
         scene.add(...colorspace.meshes);
         pickingScene.add(...colorspace.pick_meshes);
-        for (const axis of axes) {
-            orthoScene.add(...axis.meshes);
-            orthoPickingScene.add(...axis.pick_meshes);
-        }
 
         const start_time = Date.now();
         let last_time = Date.now();
@@ -114,19 +99,18 @@
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             if (picked) {
                 colorspace.on_input_change(picked.color);
-                for (const axis of axes) {
-                    axis.on_input_change(picked.color);
-                }
             }
             if (!e.buttons) {
                 return;
             }
             controller.on_move(new THREE.Vector3(e.movementX, e.movementY, 0.0));
         };
-        canvas.onwheel = (e) => {
+        canvas.addEventListener('wheel', (e) => {
             const dy = e.deltaY / 10;
             controller.on_move(new THREE.Vector3(0, 0, dy));
-        };
+        }, {
+            passive: false,
+        });
         animate();
     };
 
@@ -134,6 +118,6 @@
     $: colorspace?.on_input_change(new THREE.Vector3(...color));
 </script>
 
-<div class="w-96 h-96 border bg-gray-400">
+<div class="w-96 h-96">
     <canvas class="w-full h-full" bind:this={canvas} />
 </div>

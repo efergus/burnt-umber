@@ -20,7 +20,7 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
     const controller = {
         theta: Math.PI / 2,
         phi: 1,
-        radius: 4,
+        radius: 1.5,
         lookAt: new THREE.Vector3(0, 1, 0),
 
         on_move(delta: THREE.Vector3) {
@@ -39,6 +39,7 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
                 Math.cos(this.theta - Math.PI / 4),
                 -Math.sin(this.phi)
             );
+            this.lookAt.y = this.theta / (Math.PI / 4);
             up.normalize();
             position.normalize().multiplyScalar(this.radius);
             position.add(this.lookAt);
