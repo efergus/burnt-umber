@@ -93,9 +93,6 @@
                 return;
             }
         };
-        canvas.onwheel = (e) => {
-            const dy = e.deltaY / 10;
-        };
         animate();
     };
 

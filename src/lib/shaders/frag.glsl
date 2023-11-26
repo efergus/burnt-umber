@@ -4,6 +4,12 @@ uniform sampler2D tDiffuse;
 
 varying vec2 vUv;
 in vec3 vColor;
+in vec4 mvPosition;
+
+#ifdef USE_CLIP_PLANE
+varying vec3 vClipPosition;
+uniform vec4 clipPlane;
+#endif
 
 // FUNCTIONS
 
@@ -20,7 +26,13 @@ vec3 srgb(vec3 rgb) {
 }
     
 void main() {
+
+    #ifdef USE_CLIP_PLANE
+        if ( dot( vClipPosition, clipPlane.xyz ) > clipPlane.w ) discard;
+    #endif
+    
     vec4 fragColor = vec4(vColor, 1.0);
     // REPLACE
+    // fragColor.xyz = vClipPosition.xyz;
     gl_FragColor = fragColor;
 }
