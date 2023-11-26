@@ -21,14 +21,13 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
     const cursor_geometry = new THREE.SphereGeometry(0.1, 8, 8);
     const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
     const embedMatrix = new THREE.Matrix4();
-    const clippingPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
     const material = new THREE.ShaderMaterial({
-        vertexShader: definitions("USE_CLIP_PLANE") + vert(embed_shader, space_embedding.shader),
-        fragmentShader: frag(color_embedding.shader),
+        vertexShader: vert(embed_shader, space_embedding.shader),
+        fragmentShader: definitions("USE_CLIP_PLANE") + frag(color_embedding.shader),
         uniforms: {
-            clippingPlane: { value: clippingPlane },
+            clipPlane: { value: new THREE.Vector4(0, 0, 1, 0) },
             embedMatrix: { value: embedMatrix }
             // modelViewMatrix: { value: new THREE.Matrix4().makeScale(400, 400, 0) },
             // projectionMatrix: { value: new THREE.Matrix4().makeScale(1, 1, 0.1).multiply(new THREE.Matrix4().makeTranslation(0, 0, 5)) }

@@ -21,12 +21,7 @@ void main() {
     vec3 vertEmbed = (embedMatrix * vec4(vertPosition, 1.0)).xyz;
     // REPLACE
     vec4 mvPosition = modelViewMatrix * vec4(vertPosition, 1.0);
-    // #if NUM_CLIPPING_PLANES > 0
-
-    vClipPosition = - mvPosition.xyz;
-        // mvPosition *= 2;
-
-    // #endif
+    vClipPosition = vertPosition;
     gl_Position = projectionMatrix * mvPosition;
     vColor = vertEmbed;
     vUv = uv;

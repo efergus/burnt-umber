@@ -33,6 +33,11 @@ void main() {
     
     vec4 fragColor = vec4(vColor, 1.0);
     // REPLACE
-    // fragColor.xyz = vClipPosition.xyz;
+    // #ifdef USE_CLIP_PLANE
+    //     fragColor.xyz = clipPlane.xyz;
+    // #endif
+    // #ifdef USE_CLIP_PLANE
+    //     fragColor.xyz = vec3(0);
+    // #endif
     gl_FragColor = fragColor;
 }
