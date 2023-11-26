@@ -62,6 +62,10 @@ vec3 mark_out_of_gamut(vec3 rgb) {
     return mix(rgb, vec3(0.5, 0.0, 0.5), outside);
 }
 
+bool out_of_gamut(vec3 rgb) {
+    return any(lessThan(rgb, vec3(0.0))) || any(greaterThan(rgb, vec3(1.0)));
+}
+
 vec3 oklab_to_linear_srgb(vec3 lab) {
     vec3 lms = vec3(lab.x + 0.3963377774 * lab.y + 0.2158037573 * lab.z,
                     lab.x - 0.1055613458 * lab.y - 0.0638541728 * lab.z,
@@ -90,4 +94,18 @@ vec3 oklab_to_srgb(vec3 oklab) {
 
 vec3 mark_oklab_to_srgb(vec3 oklab) {
     return mark_out_of_gamut(oklab_to_srgb(oklab));
+}
+
+vec3 cylindricalToCartesian(vec3 pos) {
+    float theta = pos.x;
+    float r = pos.z;
+    float y = pos.y;
+    return vec3(- r * cos(theta * PI * 2.0), y, r * sin(theta * PI * 2.0));
+}
+
+vec3 cartesianToCylindrical(vec3 pos) {
+    float theta = -atan(pos.z, pos.x) / PI / 2.0 + 0.5;
+    float r = length(pos.xz);
+    float y = pos.y;
+    return vec3(theta, y, r);
 }

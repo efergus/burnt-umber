@@ -7,13 +7,6 @@ varying vec3 vClipPosition;
 
 // FUNCTIONS
 
-vec3 cylindricalToCartesian(vec3 pos) {
-    float theta = pos.x;
-    float r = pos.z;
-    float y = pos.y;
-    return vec3(- r * cos(theta * PI * 2.0), y, r * sin(theta * PI * 2.0));
-}
-
 // all shaders have a main function
 void main() {
 
