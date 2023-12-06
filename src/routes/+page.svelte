@@ -33,13 +33,13 @@
                     grid_template_rows: '4rem 1fr 4rem',
                 })}>
                     <div />
-                    <ColorAxis bind:color axis={AXIS.X} />
+                    <ColorAxis bind:color bind:active axis={AXIS.X} />
                     <ColorChip color={color} />
-                    <ColorAxis bind:color axis={AXIS.Y} />
+                    <ColorAxis bind:color bind:active axis={AXIS.Y} />
                     <ColorPicker bind:color bind:active on:change />
                     <Palette colors={palette_colors} />
                     <div />
-                    <ColorAxis bind:color axis={AXIS.Z} />
+                    <ColorAxis bind:color bind:active axis={AXIS.Z} />
                 </div>
             </div>
         </Center>
