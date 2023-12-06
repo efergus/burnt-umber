@@ -15,8 +15,12 @@
     import { AXIS, Axis } from '$lib/element/axis';
     import { cx } from '$lib/classes';
     import { vec3 } from '$lib/geometry/vec';
+    import { createEventDispatcher } from 'svelte';
+
+    const dispatch = createEventDispatcher();
     export let axis: AXIS;
     export let color = [0.5, 1, 1];
+    let active: HTMLElement | undefined;
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
 
@@ -51,7 +55,7 @@
         embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
         axisElement = Axis.new(embed.hsv, 1, axis);
-        axisElement.on_input_change(vec3(...color));
+        axisElement.on_input_change(new THREE.Vector3(...color));
 
         scene.add(...axisElement.meshes);
 
@@ -75,7 +79,9 @@
             } else {
                 color[axis] = px;
             }
+            // active = canvas;
             axisElement.on_input_change(new THREE.Vector3(...color));
+            // dispatch('change', color);
         };
         canvas.oncontextmenu = (e) => {
             e.preventDefault();
@@ -97,7 +103,6 @@
     };
 
     $: start(canvas);
-    $: axisElement?.on_input_change(vec3(...color));
 </script>
 
 <div class="w-full h-full">

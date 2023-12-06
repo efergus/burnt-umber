@@ -16,6 +16,8 @@
     // let wasm = init();
     let palette_colors: string[] = [];
     $:palette_colors = new Array(6).fill("").map((_, i) => `hsl(${(color[0] + i / 12) * 360}, ${(color[2] - i/12) * 100}%, ${(color[1] - i/12) * 100}%)`);
+
+    let active: HTMLElement | undefined = undefined;
 </script>
 
 <div id="main">
@@ -34,7 +36,7 @@
                     <ColorAxis bind:color axis={AXIS.X} />
                     <ColorChip color={color} />
                     <ColorAxis bind:color axis={AXIS.Y} />
-                    <ColorPicker bind:color />
+                    <ColorPicker bind:color bind:active on:change />
                     <Palette colors={palette_colors} />
                     <div />
                     <ColorAxis bind:color axis={AXIS.Z} />

@@ -13,9 +13,15 @@
     import { space, type Space } from '$lib/element/space';
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
+    import { createEventDispatcher } from 'svelte';
+
+    const dispatch = createEventDispatcher();
     export let color = [1, 1, 1];
+    export let active: HTMLElement | undefined;
     let canvas: HTMLCanvasElement;
     let colorspace: Space;
+
+    // export let thing_happened: (color: number[])=>void;
 
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
@@ -32,6 +38,7 @@
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
         // renderer.setClearColor(0x000000, 0);
         renderer.setSize(rect.width, rect.height);
+        renderer.setPixelRatio(2);
         renderer.autoClear = false;
 
         const pickTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
@@ -98,7 +105,10 @@
             const rect = canvas.getBoundingClientRect();
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             if (picked) {
-                colorspace.on_input_change(picked.color);
+                colorspace.on_input_change(picked.color, true);
+                // thing_happened(color);
+                // dispatch('change', color);
+                active = canvas;
             }
             if (!e.buttons) {
                 return;
@@ -114,8 +124,13 @@
         animate();
     };
 
+    export const set_color = (c: number[]) => {
+        colorspace?.on_input_change(new THREE.Vector3(...c), active === canvas);
+        color = c.slice();
+    };
+
     $: start(canvas);
-    $: colorspace?.on_input_change(new THREE.Vector3(...color));
+    $: set_color(color);
 </script>
 
 <div class="w-96 h-96">
