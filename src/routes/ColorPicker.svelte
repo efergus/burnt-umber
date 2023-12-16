@@ -122,6 +122,9 @@
             passive: false,
         });
         animate();
+        setTimeout(() => {
+            colorspace.set_slice(0);
+        }, 3000)
     };
 
     export const set_color = (c: number[]) => {

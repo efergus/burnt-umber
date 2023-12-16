@@ -14,8 +14,10 @@ export interface Space extends ColorElement {
     space_embedding: Embedding;
     color_embedding: Embedding;
     input_pos: THREE.Vector3;
+    slice: number;
 
     on_input_change(pos: THREE.Vector3, me?: boolean): void;
+    set_slice(slice: number): void;
 }
 
 export function space(space_embedding: Embedding, color_embedding: Embedding, tag: number): Space {
@@ -79,29 +81,49 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
     const pick_plane_mesh = new THREE.Mesh(plane_geometry.clone(), pick_plane_material);
     const cursor_mesh = new THREE.Mesh(cursor_geometry, cursor_material);
 
+    plane_mesh.visible = false;
+
+    const clip = (pos: THREE.Vector3, slice: number) => {
+        if (slice >= 1.0) {
+            const clip_plane = new THREE.Vector4(0, 0, 1, 2);
+            material.uniforms.clipPlane.value = clip_plane;
+            pick_material.uniforms.clipPlane.value = clip_plane;
+            plane_mesh.visible = false;
+            pick_plane_mesh.visible = false;
+            return;
+        }
+        const rotation = pos.x * Math.PI * 2;
+        const plane_embedding = new THREE.Matrix4().makeRotationY(rotation);
+        plane_mesh.material.uniforms.embedMatrix.value = plane_embedding;
+        pick_plane_mesh.material.uniforms.embedMatrix.value = plane_embedding;
+        plane_mesh.visible = true;
+        pick_plane_mesh.visible = true;
+
+        const plane_direction = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation);
+        const clip_plane = new THREE.Vector4(...plane_direction, slice);
+        material.uniforms.clipPlane.value = clip_plane;
+        pick_material.uniforms.clipPlane.value = clip_plane;
+    }
+
     return {
         meshes: [mesh, plane_mesh, cursor_mesh],
         pick_meshes: [pick_mesh, pick_plane_mesh],
         space_embedding,
         color_embedding,
         input_pos: new THREE.Vector3(),
+        slice: 1,
         on_input_change(pos: THREE.Vector3, me?: boolean) {
             this.input_pos.copy(pos);
             const embedded_pos = this.space_embedding.embed!(pos);
             cursor_mesh.position.copy(embedded_pos);
 
-            console.log(me);
             if (!me) {
-                const plane_embedding = new THREE.Matrix4().makeRotationY(pos.x * Math.PI * 2 + Math.PI / 2);
-                plane_mesh.material.uniforms.embedMatrix.value = plane_embedding;
-                pick_plane_mesh.material.uniforms.embedMatrix.value = plane_embedding;
-    
-                embedded_pos.y = 0;
-                embedded_pos.normalize();
-                const clip_plane = new THREE.Vector4(...embedded_pos, 0);
-                material.uniforms.clipPlane.value = clip_plane;
-                pick_material.uniforms.clipPlane.value = clip_plane;
+                clip(pos, this.slice);
             }
+        },
+        set_slice(slice: number) {
+            this.slice = slice;
+            clip(this.input_pos, slice)
         }
     };
 }
