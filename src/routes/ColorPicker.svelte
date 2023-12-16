@@ -95,13 +95,13 @@
                 // space: spacePosition,
             };
         };
-        canvas.oncontextmenu = (e) => {
+        canvas.oncontextmenu = async (e) => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             console.log(e.button);
         };
-        canvas.onmousemove = (e) => {
+        canvas.onmousemove = async (e) => {
             const rect = canvas.getBoundingClientRect();
             const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
             if (picked) {
