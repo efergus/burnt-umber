@@ -20,6 +20,7 @@
     export let active: HTMLElement | undefined;
     let canvas: HTMLCanvasElement;
     let colorspace: Space;
+    let saved_color = [...color];
 
     // export let thing_happened: (color: number[])=>void;
 
@@ -38,7 +39,7 @@
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
         // renderer.setClearColor(0x000000, 0);
         renderer.setSize(rect.width, rect.height);
-        renderer.setPixelRatio(2);
+        renderer.setPixelRatio(1);
         renderer.autoClear = false;
 
         const pickTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
@@ -95,6 +96,31 @@
                 // space: spacePosition,
             };
         };
+        const select = (value: number[] | THREE.Vector3) => {
+            colorspace.on_input_change(new THREE.Vector3(...value), true);
+            // console.log("Select (before)", color, saved_color)
+            color = [...value]
+            // console.log("Select", color, saved_color)
+        }
+        const mouse_select = (e: MouseEvent) => {
+            const rect = canvas.getBoundingClientRect();
+            const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
+            if (!picked) {
+                console.log("Restore", saved_color)
+                select(saved_color);
+                return;
+            };
+            select(picked.color);
+            // thing_happened(color);
+            // dispatch('change', color);
+            active = canvas;
+            if (!e.buttons) {
+                return;
+            }
+            saved_color = [...picked.color];
+            console.log("Save", saved_color)
+            controller.on_move(new THREE.Vector3(e.movementX, e.movementY, 0.0));
+        };
         canvas.oncontextmenu = async (e) => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
@@ -102,18 +128,10 @@
             console.log(e.button);
         };
         canvas.onmousemove = async (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
-            if (picked) {
-                colorspace.on_input_change(picked.color, true);
-                // thing_happened(color);
-                // dispatch('change', color);
-                active = canvas;
-            }
-            if (!e.buttons) {
-                return;
-            }
-            controller.on_move(new THREE.Vector3(e.movementX, e.movementY, 0.0));
+            mouse_select(e);
+        };
+        canvas.onmousedown = async (e) => {
+            mouse_select(e);
         };
         canvas.addEventListener('wheel', (e) => {
             const dy = e.deltaY / 10;
@@ -122,9 +140,6 @@
             passive: false,
         });
         animate();
-        setTimeout(() => {
-            colorspace.set_slice(0);
-        }, 3000)
     };
 
     export const set_color = (c: number[]) => {
