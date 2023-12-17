@@ -19,7 +19,8 @@ export const clipOutOfGamut_shader = 'if(out_of_gamut(fragColor.xyz)) discard;';
 export const embed_shader = 'vertPosition = vertEmbed;';
 export const cylindrical_shader = 'vertPosition = cylindricalToCartesian(vertPosition);';
 export const inverse_cylindrical_shader = 'vertPosition = cartesianToCylindrical(vertPosition);';
-export const inverse_cylindrical_frag_shader = 'fragColor.xyz = cartesianToCylindrical(fragColor.xyz);';
+export const inverse_cylindrical_frag_shader =
+    'fragColor.xyz = cartesianToCylindrical(fragColor.xyz);';
 
 export function cylindricalToCartesian(pos: THREE.Vector3) {
     let theta = pos.x;

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
-export function vec3(x: number, y: number, z: number): THREE.Vector3 {
+export function vec3(x?: number, y?: number, z?: number): THREE.Vector3 {
     return new THREE.Vector3(x, y, z);
 }
 
-export function vec2(x: number, y: number): THREE.Vector2 {
+export function vec2(x?: number, y?: number): THREE.Vector2 {
     return new THREE.Vector2(x, y);
 }
 
@@ -25,3 +25,9 @@ export const unit = {
 };
 
 export const units = [unit.x, unit.y, unit.z];
+
+export type Vec2 = THREE.Vector2;
+export type Vec3 = THREE.Vector3;
+
+export type Mat3 = THREE.Matrix3;
+export type Mat4 = THREE.Matrix4;

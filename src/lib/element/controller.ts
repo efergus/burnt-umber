@@ -35,18 +35,20 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
         lookAt: new THREE.Vector3(0, 1, 0),
 
         on_move(delta: THREE.Vector3) {
-            const new_theta = Math.max(Math.min(this.theta + delta.y * 0.01, Math.PI * 1.5), -Math.PI / 2);
-            const cross = (this.theta > Math.PI / 2) !== (new_theta > Math.PI / 2) && this.theta !== Math.PI / 2;
+            const new_theta = Math.max(
+                Math.min(this.theta + delta.y * 0.01, Math.PI * 1.5),
+                -Math.PI / 2
+            );
+            const cross =
+                this.theta > Math.PI / 2 !== new_theta > Math.PI / 2 && this.theta !== Math.PI / 2;
             // console.log(cross, this.stick, this.theta, new_theta);
 
             if (cross) {
                 this.stick += delta.y;
                 this.theta = Math.PI / 2;
-            }
-            else if (this.stick !== 0) {
+            } else if (this.stick !== 0) {
                 this.stick += delta.y;
-            }
-            else {
+            } else {
                 this.theta = new_theta;
             }
             if (Math.abs(this.stick) >= 40) {
@@ -57,12 +59,12 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             this.radius += delta.z * 0.04;
 
             this.radius = Math.max(this.radius, 0.1);
-            const radius = this.radius + Math.cos(this.theta)**2 * .5;
+            const radius = this.radius + Math.cos(this.theta) ** 2 * 0.5;
 
             const position = spherical_to_cartesian(this.theta, this.phi, radius);
             const up = spherical_to_cartesian(this.theta + Math.PI / 2, this.phi, 1);
             up.normalize();
-            this.lookAt.y = (Math.sin(this.theta) + 1)/2;
+            this.lookAt.y = (Math.sin(this.theta) + 1) / 2;
             position.add(this.lookAt);
             camera.up.copy(up);
             camera.position.copy(position);

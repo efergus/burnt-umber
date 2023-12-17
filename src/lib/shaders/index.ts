@@ -3,7 +3,7 @@ import fragsrc from '$lib/shaders/frag.glsl?raw';
 import funcsrc from '$lib/shaders/func.glsl?raw';
 
 export function definitions(...str: string[]): string {
-    return str.map(x=>`#define ${x}`).join('\n');
+    return str.map((x) => `#define ${x}`).join('\n');
 }
 
 export function vert(...str: string[]): string {

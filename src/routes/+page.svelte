@@ -15,7 +15,14 @@
 
     // let wasm = init();
     let palette_colors: string[] = [];
-    $:palette_colors = new Array(6).fill("").map((_, i) => `hsl(${(color[0] + i / 12) * 360}, ${(color[2] - i/12) * 100}%, ${(color[1] - i/12) * 100}%)`);
+    $: palette_colors = new Array(6)
+        .fill('')
+        .map(
+            (_, i) =>
+                `hsl(${(color[0] + i / 12) * 360}, ${(color[2] - i / 12) * 100}%, ${
+                    (color[1] - i / 12) * 100
+                }%)`
+        );
 
     let active: HTMLElement | undefined = undefined;
 </script>
@@ -24,25 +31,28 @@
     <!-- {#await wasm}
         Loading
     {:then _} -->
-        <Center horizontal={1}>
-            <div class="flex gap-8 items-center">
-                <!-- <RustColorpicker /> -->
-                <!-- <Rtt /> -->
-                <div class="grid" style={sx({
+    <Center horizontal={1}>
+        <div class="flex gap-8 items-center">
+            <!-- <RustColorpicker /> -->
+            <!-- <Rtt /> -->
+            <div
+                class="grid"
+                style={sx({
                     grid_template_columns: '4rem 1fr 4rem',
-                    grid_template_rows: '4rem 1fr 4rem',
-                })}>
-                    <div />
-                    <ColorAxis bind:color bind:active axis={AXIS.X} />
-                    <ColorChip color={color} />
-                    <ColorAxis bind:color bind:active axis={AXIS.Y} />
-                    <ColorPicker bind:color bind:active on:change />
-                    <Palette colors={palette_colors} />
-                    <div />
-                    <ColorAxis bind:color bind:active axis={AXIS.Z} />
-                </div>
+                    grid_template_rows: '4rem 1fr 4rem'
+                })}
+            >
+                <div />
+                <ColorAxis bind:color bind:active axis={AXIS.X} />
+                <ColorChip {color} />
+                <ColorAxis bind:color bind:active axis={AXIS.Y} />
+                <ColorPicker bind:color bind:active on:change />
+                <Palette colors={palette_colors} />
+                <div />
+                <ColorAxis bind:color bind:active axis={AXIS.Z} />
             </div>
-        </Center>
+        </div>
+    </Center>
     <!-- {/await} -->
 </div>
 
