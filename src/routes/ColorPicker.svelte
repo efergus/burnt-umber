@@ -10,24 +10,36 @@
         tDiffuse_shader,
         white_shader
     } from '$lib/shaders/embed';
-    import { space, type Space } from '$lib/element/space';
+    import { ColorSpace, space, type Space } from '$lib/element/space';
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
     import { createEventDispatcher } from 'svelte';
+    import { vec3, type Vec3 } from '$lib/geometry/vec';
 
     const dispatch = createEventDispatcher();
-    export let color = [1, 1, 1];
+    export let color = vec3(1, 1, 1);
     export let active: HTMLElement | undefined;
     export let slice = 1;
     let canvas: HTMLCanvasElement;
-    let colorspace: Space;
-    let saved_color = [...color];
+    let colorspace: ColorSpace;
 
     // export let thing_happened: (color: number[])=>void;
 
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
-        colorspace = ColorSpace.new({ canvas, color, slice });
+        colorspace = ColorSpace.new({
+            canvas,
+            color,
+            slice,
+            space_embedding: embed.cylindrical,
+            color_embedding: embed.hsv
+        });
+        render();
+    };
+
+    const render = () => {
+        colorspace?.render();
+        requestAnimationFrame(render)
     };
 
     export const set_color = (color: Vec3) => {

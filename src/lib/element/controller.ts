@@ -69,6 +69,8 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             camera.up.copy(up);
             camera.position.copy(position);
             camera.lookAt(this.lookAt);
+
+            // console.log("MOVED", this.phi, ...camera.position)
         }
     };
     controller.on_move(new THREE.Vector3(0, 0, 0));

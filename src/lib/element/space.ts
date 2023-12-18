@@ -1,4 +1,4 @@
-import type { Vec3 } from '$lib/geometry/vec';
+import { vec3, type Vec3 } from '$lib/geometry/vec';
 import { definitions, frag, vert } from '$lib/shaders';
 import {
     pick_shader,
@@ -10,6 +10,7 @@ import {
     inverse_cylindrical_frag_shader
 } from '$lib/shaders/embed';
 import * as THREE from 'three';
+import { cameraController, type CameraController } from './controller';
 
 export interface Space extends ColorElement {
     space_embedding: Embedding;
@@ -143,6 +144,52 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
     };
 }
 
+class ColorSpaceCube {
+    mesh: THREE.Mesh;
+    pick_mesh: THREE.Mesh;
+    space_embedding: Embedding;
+    color_embedding: Embedding;
+
+    constructor(
+        scene: THREE.Scene,
+        pickScene: THREE.Scene,
+        space_embedding: Embedding,
+        color_embedding: Embedding
+    ) {
+        const geometry = new THREE.BoxGeometry(1, 1, 1, 64, 8, 8);
+        const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
+        const embedMatrix = new THREE.Matrix4();
+        embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
+
+        const material = new THREE.ShaderMaterial({
+            vertexShader: vert(embed_shader, space_embedding.shader),
+            fragmentShader: definitions('USE_CLIP_PLANE') + frag(color_embedding.shader),
+            uniforms: {
+                clipPlane: { value: new THREE.Vector4(0, 0, 1, 1) },
+                embedMatrix: { value: embedMatrix }
+            }
+        });
+        const pick_material = new THREE.ShaderMaterial({
+            vertexShader: vert(embed_shader, space_embedding.shader),
+            fragmentShader: definitions('USE_CLIP_PLANE') + frag(pick_shader),
+            uniforms: {
+                clipPlane: { value: new THREE.Vector4(0, 0, 1, 1) },
+                embedMatrix: { value: embedMatrix },
+                tag: { value: 1 }
+            }
+        });
+
+        this.mesh = new THREE.Mesh(geometry, material);
+        this.pick_mesh = new THREE.Mesh(geometry.clone(), pick_material);
+
+        scene.add(this.mesh);
+        pickScene.add(this.pick_mesh);
+
+        this.space_embedding = space_embedding;
+        this.color_embedding = color_embedding;
+    }
+}
+
 type WithoutMethods<T> = {
     [K in keyof T as T[K] extends Function ? never : K]: T[K];
 };
@@ -150,27 +197,115 @@ type WithoutMethods<T> = {
 export interface ColorSpaceParams {
     canvas: HTMLCanvasElement;
     color: Vec3;
+    space_embedding: Embedding;
+    color_embedding: Embedding;
+    slice: number;
 }
 
 export class ColorSpace {
     canvas: HTMLCanvasElement;
     color: Vec3;
+    saved_color: Vec3;
     renderer: THREE.WebGLRenderer;
+    screenScene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    cameraController: CameraController;
+    pickScene: THREE.Scene;
+    pickTarget: THREE.WebGLRenderTarget;
 
-    constructor({ color, canvas, renderer }: WithoutMethods<ColorSpace>) {
+    cube: ColorSpaceCube;
+
+    constructor({
+        color,
+        saved_color,
+        canvas,
+        renderer,
+        screenScene,
+        camera: screenCamera,
+        cameraController,
+        pickScene,
+        pickTarget,
+        cube
+    }: WithoutMethods<ColorSpace>) {
         this.canvas = canvas;
         this.color = color;
+        this.saved_color = saved_color;
         this.renderer = renderer;
+        this.screenScene = screenScene;
+        this.camera = screenCamera;
+        this.cameraController = cameraController;
+        this.pickScene = pickScene;
+        this.pickTarget = pickTarget;
+
+        this.cube = cube;
+
+        canvas.addEventListener('mousemove', (e) => {
+            this.mouse_select(e);
+        });
+        canvas.addEventListener('mousedown', (e) => {
+            this.mouse_select(e);
+        });
+        canvas.addEventListener('wheel', (e) => {
+            const dy = e.deltaY / 10;
+            cameraController.on_move(new THREE.Vector3(0, 0, dy));
+        }, {
+            passive: false,
+        });
     }
     static new(params: ColorSpaceParams) {
+        const rect = params.canvas.getBoundingClientRect();
+        const renderer = new THREE.WebGLRenderer({
+            canvas: params.canvas,
+            antialias: true,
+            alpha: true
+        });
+        renderer.setSize(rect.width, rect.height);
+        renderer.setPixelRatio(1);
+        renderer.autoClear = false;
+
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.01, 100);
+        const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+        orthoCamera.position.z = 1;
+        orthoCamera.lookAt(0, 0, 0);
+
+        const pickTarget = new THREE.WebGLRenderTarget(1, 1, {
+            format: THREE.RGBAFormat,
+            type: THREE.FloatType
+        });
+        pickTarget.texture.generateMipmaps = false;
+
+        const screenScene = new THREE.Scene();
+        const pickScene = new THREE.Scene();
+        const cube = new ColorSpaceCube(
+            screenScene,
+            pickScene,
+            params.space_embedding,
+            params.color_embedding
+        );
+
         return new ColorSpace({
             ...params,
-            renderer: new THREE.WebGLRenderer({
-                canvas: params.canvas,
-                antialias: true,
-                alpha: true
-            })
+            saved_color: params.color,
+            renderer,
+            screenScene,
+            camera: camera,
+            cameraController: cameraController(camera),
+            pickScene,
+            pickTarget,
+            cube
         });
+    }
+
+    set({ color, saved_color }: { color: Vec3; saved_color?: Vec3 }) {
+        this.color = color;
+        // this.saved_color = saved_color;
+    }
+
+    render() {
+        const renderer = this.renderer;
+        renderer.setRenderTarget(null);
+        renderer.clear();
+        renderer.render(this.screenScene, this.camera);
     }
 
     mouse_position(e: MouseEvent) {
@@ -183,13 +318,41 @@ export class ColorSpace {
     mouse_select(e: MouseEvent) {
         const { x, y } = this.mouse_position(e);
         const picked = this.pick(x, y);
-        if (!picked) {
-            return;
+        if (picked) {
+            this.color = picked.clone();
         }
-        this.color = [...picked.color];
+        const selecting = e.buttons === 1;
+        if (selecting) {
+            if (picked) {
+                this.saved_color = picked.clone();
+            }
+            this.cameraController.on_move(vec3(e.movementX, e.movementY, 0.0));
+        }
     }
 
-    pick(x: number, y: number) {}
+    pick(x: number, y: number): Vec3 | undefined {
+        const renderer = this.renderer;
+
+        renderer.setRenderTarget(this.pickTarget);
+        renderer.clear();
+        renderer.render(this.pickScene, this.camera);
+        const pixelBuffer = new Float32Array(4);
+        const gl = renderer.getContext();
+        if (!gl) {
+            console.error('No context!');
+            return;
+        }
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.FLOAT, pixelBuffer);
+        console.log("PICK", ...pixelBuffer)
+        if (pixelBuffer[3] === 0) {
+            renderer.setRenderTarget(null);
+            return;
+        }
+
+        const colorPosition = new THREE.Vector3(pixelBuffer[0], pixelBuffer[1], pixelBuffer[2]);
+        renderer.setRenderTarget(null);
+        return colorPosition;
+    }
 }
 
 // const start = (canvas: HTMLCanvasElement) => {
