@@ -11,7 +11,8 @@
     import ColorChip from './ColorChip.svelte';
     import Palette from './Palette.svelte';
     import { sx } from '$lib/classes';
-    let color = [0.5, 1, 1];
+    import { vec3 } from '$lib/geometry/vec';
+    let color = vec3(0.5, 1, 1);
 
     // let wasm = init();
     let palette_colors: string[] = [];
@@ -19,8 +20,8 @@
         .fill('')
         .map(
             (_, i) =>
-                `hsl(${(color[0] + i / 12) * 360}, ${(color[2] - i / 12) * 100}%, ${
-                    (color[1] - i / 12) * 100
+                `hsl(${(color.x + i / 12) * 360}, ${(color.z - i / 12) * 100}%, ${
+                    (color.y - i / 12) * 100
                 }%)`
         );
 
@@ -43,13 +44,13 @@
                 })}
             >
                 <div />
-                <ColorAxis bind:color bind:active axis={AXIS.X} />
+                <ColorAxis bind:color axis={AXIS.X} />
                 <ColorChip {color} />
-                <ColorAxis bind:color bind:active axis={AXIS.Y} />
-                <ColorPicker bind:color bind:active on:change />
+                <ColorAxis bind:color axis={AXIS.Y} />
+                <ColorPicker bind:color on:change />
                 <Palette colors={palette_colors} />
                 <div />
-                <ColorAxis bind:color bind:active axis={AXIS.Z} />
+                <ColorAxis bind:color axis={AXIS.Z} />
             </div>
         </div>
     </Center>

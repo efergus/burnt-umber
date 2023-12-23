@@ -19,8 +19,7 @@
 
     const dispatch = createEventDispatcher();
     export let axis: AXIS;
-    export let color = [0.5, 1, 1];
-    export let active: HTMLElement | undefined;
+    export let color = vec3(0.5, 1, 1);
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
 
@@ -75,11 +74,10 @@
             const px = x / rect.width;
             const py = y / rect.height;
             if (axis === AXIS.Y) {
-                color[1] = py;
+                color.y = py;
             } else {
-                color[axis] = px;
+                color.setComponent(axis, px);
             }
-            active = canvas;
             axisElement.on_input_change(new THREE.Vector3(...color));
             // dispatch('change', color);
         };

@@ -144,6 +144,27 @@ export function space(space_embedding: Embedding, color_embedding: Embedding, ta
     };
 }
 
+class Cursor {
+    mesh: THREE.Mesh;
+    constructor(scene: THREE.Scene) {
+        const geometry = new THREE.SphereGeometry(0.1, 16, 8);
+        const material = new THREE.ShaderMaterial({
+            vertexShader: vert(),
+            fragmentShader: frag(black_shader),
+            uniforms: {
+                embedMatrix: { value: new THREE.Matrix4() }
+            }
+        });
+        this.mesh = new THREE.Mesh(geometry, material);
+
+        scene.add(this.mesh);
+    }
+
+    set(pos: THREE.Vector3) {
+        this.mesh.position.copy(pos);
+    }
+}
+
 class ColorSpaceCube {
     mesh: THREE.Mesh;
     pick_mesh: THREE.Mesh;
@@ -162,6 +183,7 @@ class ColorSpaceCube {
         embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
         const material = new THREE.ShaderMaterial({
+            // side: THREE.DoubleSide,
             vertexShader: vert(embed_shader, space_embedding.shader),
             fragmentShader: definitions('USE_CLIP_PLANE') + frag(color_embedding.shader),
             uniforms: {
@@ -200,6 +222,8 @@ export interface ColorSpaceParams {
     space_embedding: Embedding;
     color_embedding: Embedding;
     slice: number;
+
+    onChange?: (color: Vec3) => void;
 }
 
 export class ColorSpace {
@@ -214,6 +238,9 @@ export class ColorSpace {
     pickTarget: THREE.WebGLRenderTarget;
 
     cube: ColorSpaceCube;
+    cursor: Cursor;
+
+    onChange?: (color: Vec3) => void;
 
     constructor({
         color,
@@ -225,7 +252,9 @@ export class ColorSpace {
         cameraController,
         pickScene,
         pickTarget,
-        cube
+        cube,
+        cursor,
+        onChange
     }: WithoutMethods<ColorSpace>) {
         this.canvas = canvas;
         this.color = color;
@@ -238,6 +267,9 @@ export class ColorSpace {
         this.pickTarget = pickTarget;
 
         this.cube = cube;
+        this.cursor = cursor;
+
+        this.onChange = onChange;
 
         canvas.addEventListener('mousemove', (e) => {
             this.mouse_select(e);
@@ -263,12 +295,13 @@ export class ColorSpace {
         renderer.setPixelRatio(1);
         renderer.autoClear = false;
 
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.01, 100);
+        const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
         const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
         orthoCamera.position.z = 1;
         orthoCamera.lookAt(0, 0, 0);
 
-        const pickTarget = new THREE.WebGLRenderTarget(1, 1, {
+        // TODO: do 1x1 and scissor?
+        const pickTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
             format: THREE.RGBAFormat,
             type: THREE.FloatType
         });
@@ -283,6 +316,8 @@ export class ColorSpace {
             params.color_embedding
         );
 
+        const cursor = new Cursor(screenScene);
+
         return new ColorSpace({
             ...params,
             saved_color: params.color,
@@ -292,7 +327,8 @@ export class ColorSpace {
             cameraController: cameraController(camera),
             pickScene,
             pickTarget,
-            cube
+            cube,
+            cursor
         });
     }
 
@@ -321,6 +357,11 @@ export class ColorSpace {
         if (picked) {
             this.color = picked.clone();
         }
+        else {
+            console.log(this.color, this.saved_color);
+            this.color = vec3(...this.saved_color);
+        }
+        this.onChange?.(this.color);
         const selecting = e.buttons === 1;
         if (selecting) {
             if (picked) {
@@ -328,6 +369,8 @@ export class ColorSpace {
             }
             this.cameraController.on_move(vec3(e.movementX, e.movementY, 0.0));
         }
+        const position = this.cube.space_embedding.embed!(this.color);
+        this.cursor.set(position);
     }
 
     pick(x: number, y: number): Vec3 | undefined {
@@ -343,7 +386,6 @@ export class ColorSpace {
             return;
         }
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.FLOAT, pixelBuffer);
-        console.log("PICK", ...pixelBuffer)
         if (pixelBuffer[3] === 0) {
             renderer.setRenderTarget(null);
             return;

@@ -31,7 +31,7 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
         stick: 1,
         theta: Math.PI / 2,
         phi: 0,
-        radius: 1.5,
+        radius: 3,
         lookAt: new THREE.Vector3(0, 1, 0),
 
         on_move(delta: THREE.Vector3) {
