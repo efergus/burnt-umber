@@ -11,6 +11,7 @@ import {
 } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import { cameraController, type CameraController } from './controller';
+import type { ColorElement } from '.';
 
 export interface Space extends ColorElement {
     space_embedding: Embedding;
@@ -213,6 +214,7 @@ class ColorSpaceCube {
 }
 
 type WithoutMethods<T> = {
+    // eslint-disable-next-line @typescript-eslint/ban-types
     [K in keyof T as T[K] extends Function ? never : K]: T[K];
 };
 

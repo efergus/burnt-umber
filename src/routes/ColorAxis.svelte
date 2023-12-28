@@ -27,36 +27,12 @@
 
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-        renderer.setSize(rect.width, rect.height);
-        renderer.autoClear = false;
 
-        const scene = new THREE.Scene();
-        const aspect = rect.width / rect.height;
-        const width = aspect > 1 ? 1 : aspect;
-        const height = aspect > 1 ? 1 / aspect : 1;
-        console.log(width, height);
-        const camera = new THREE.OrthographicCamera(
-            -width / 2,
-            width / 2,
-            height / 2,
-            -height / 2,
-            0.1,
-            100
-        );
-        camera.position.z = 1;
-        camera.lookAt(0, 0, 0);
-
-        const geometry = new THREE.BoxGeometry(1, 1, 1, 32, 8, 8);
-        const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
-        const embedMatrix = new THREE.Matrix4();
-        embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
-
-        axisElement = Axis.new(embed.hsv, 1, axis);
+        axisElement = Axis.new(canvas, embed.hsv, axis, (c) => {
+            color = c;
+            // dispatch('change', c);
+        });
         axisElement.on_input_change(new THREE.Vector3(...color));
-
-        scene.add(...axisElement.meshes);
 
         const start_time = Date.now();
         let last_time = Date.now();
@@ -66,41 +42,23 @@
             last_time = now;
             requestAnimationFrame(animate);
 
-            renderer.setRenderTarget(null);
-            renderer.clear();
-            renderer.render(scene, camera);
+            axisElement.render();
         };
-        const pick = (x: number, y: number) => {
-            const px = x / rect.width;
-            const py = y / rect.height;
-            if (axis === AXIS.Y) {
-                color.y = py;
-            } else {
-                color.setComponent(axis, px);
-            }
-            axisElement.on_input_change(new THREE.Vector3(...color));
-            // dispatch('change', color);
-        };
-        canvas.oncontextmenu = (e) => {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
-            console.log(e.button);
-        };
+        // canvas.oncontextmenu = (e) => {
+        //     e.preventDefault();
+        // };
         canvas.onmousemove = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const picked = pick(e.clientX - rect.left, rect.bottom - e.clientY);
-            // if (picked) {
-            //     axisElement.on_input_change(picked.color);
-            // }
-            if (!e.buttons) {
-                return;
-            }
+            axisElement.mouse_select(e);
         };
         animate();
     };
 
+    export const set_color = (color: THREE.Vector3) => {
+        axisElement?.set_color(color);
+    };
+
     $: start(canvas);
+    $: set_color(color);
 </script>
 
 <div class="w-full h-full">

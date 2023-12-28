@@ -1,6 +1,8 @@
 import { frag, vert } from '$lib/shaders';
 import { pick_shader, type Embedding, black_shader } from '$lib/shaders/embed';
 import * as THREE from 'three';
+import type { ColorElement } from '.';
+import { vec3 } from '$lib/geometry/vec';
 
 export enum AXIS {
     X = 0,
@@ -11,6 +13,17 @@ export enum AXIS {
 export interface Axis extends ColorElement {
     color_embedding: Embedding;
     input_pos: THREE.Vector3;
+    color: THREE.Vector3;
+    saved_color: THREE.Vector3;
+
+    onChange?: (color: THREE.Vector3) => void;
+    set_color(color: THREE.Vector3): void;
+
+    pick(x: number, y: number): THREE.Vector3;
+    render(): void;
+
+    mouse_position(e: MouseEvent): { x: number; y: number };
+    mouse_select(e: MouseEvent): void;
 }
 
 export class Axis {
@@ -18,7 +31,8 @@ export class Axis {
         canvas: HTMLCanvasElement,
         // space_embedding: Embedding,
         color_embedding: Embedding,
-        axis: AXIS
+        axis: AXIS,
+        onChange?: (color: THREE.Vector3) => void
     ): Axis {
         const rect = canvas.getBoundingClientRect();
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -53,14 +67,6 @@ export class Axis {
                 embedMatrix: { value: embedMatrix }
             }
         });
-        const pick_material = new THREE.ShaderMaterial({
-            vertexShader: vert(),
-            fragmentShader: frag(pick_shader),
-            uniforms: {
-                embedMatrix: { value: embedMatrix },
-                tag: { value: 1 }
-            }
-        });
         const cursor_material = new THREE.ShaderMaterial({
             vertexShader: vert(),
             fragmentShader: frag(black_shader),
@@ -70,7 +76,6 @@ export class Axis {
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        const pick_mesh = new THREE.Mesh(geometry.clone(), pick_material);
         const cursor_mesh = new THREE.Mesh(cursor_geometry, cursor_material);
 
         const scale = Math.min(width, height);
@@ -84,15 +89,14 @@ export class Axis {
             throw new Error(`Unknown axis ${axis}`);
         }
 
-        pick_mesh.scale.copy(mesh.scale);
-        pick_mesh.position.copy(mesh.position);
-
         scene.add(mesh, cursor_mesh);
 
         return {
-            ortho: true,
+            color: new THREE.Vector3(0, 0, 0),
+            saved_color: new THREE.Vector3(0, 0, 0),
             color_embedding,
             input_pos: new THREE.Vector3(),
+            onChange,
             on_input_change(pos: THREE.Vector3) {
                 this.input_pos.copy(pos);
                 if (axis == AXIS.X) {
@@ -124,6 +128,54 @@ export class Axis {
                         .multiply(embedMatrix);
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
                     cursor_mesh.position.x = pos.z - 0.5;
+                }
+            },
+            set_color(color: THREE.Vector3) {
+                this.color.copy(color);
+                this.saved_color.copy(color);
+
+            },
+            render() {
+                renderer.clear();
+                renderer.render(scene, camera);
+            },
+            pick(x: number, y: number) {
+                const px = x / rect.width;
+                const py = y / rect.height;
+                const color = this.color.clone();
+                if (axis === AXIS.Y) {
+                    color.y = py;
+                } else {
+                    color.setComponent(axis, px);
+                }
+                return color;
+            },
+            mouse_position(e: MouseEvent) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = rect.bottom - e.clientY;
+                return { x, y };
+            },
+            mouse_select(e: MouseEvent) {
+                const { x, y } = this.mouse_position(e);
+                const picked = this.pick(x, y);
+                console.log(picked);
+                if (picked) {
+                    this.color = picked.clone();
+                }
+                else {
+                    this.color = this.saved_color.clone();
+                }
+                this.onChange?.(this.color);
+                const selecting = e.buttons === 1;
+                if (selecting && picked) {
+                    this.saved_color = picked.clone();
+                }
+                if (axis === AXIS.Y) {
+                    cursor_mesh.position.y = y / rect.height - 0.5;
+                }
+                else {
+                    cursor_mesh.position.x = x / rect.width - 0.5;
                 }
             }
         };
