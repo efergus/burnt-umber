@@ -1,8 +1,5 @@
 <script lang="ts">
-    import {
-        cylindrical,
-        hsv,
-    } from '$lib/shaders/embed';
+    import { cylindrical, hsv } from '$lib/shaders/embed';
     import { ColorSpace } from '$lib/element/space';
     import { createEventDispatcher } from 'svelte';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
@@ -34,7 +31,7 @@
 
     const render = () => {
         colorspace?.render();
-        requestAnimationFrame(render)
+        requestAnimationFrame(render);
     };
 
     export const set_color = (color: Vec3) => {

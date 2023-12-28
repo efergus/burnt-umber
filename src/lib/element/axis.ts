@@ -1,8 +1,7 @@
 import { frag, vert } from '$lib/shaders';
-import { pick_shader, type Embedding, black_shader } from '$lib/shaders/embed';
+import { type Embedding, black_shader } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import type { ColorElement } from '.';
-import { vec3 } from '$lib/geometry/vec';
 
 export enum AXIS {
     X = 0,
@@ -133,7 +132,6 @@ export class Axis {
             set_color(color: THREE.Vector3) {
                 this.color.copy(color);
                 this.saved_color.copy(color);
-
             },
             render() {
                 renderer.clear();
@@ -162,8 +160,7 @@ export class Axis {
                 console.log(picked);
                 if (picked) {
                     this.color = picked.clone();
-                }
-                else {
+                } else {
                     this.color = this.saved_color.clone();
                 }
                 this.onChange?.(this.color);
@@ -173,8 +170,7 @@ export class Axis {
                 }
                 if (axis === AXIS.Y) {
                     cursor_mesh.position.y = y / rect.height - 0.5;
-                }
-                else {
+                } else {
                     cursor_mesh.position.x = x / rect.width - 0.5;
                 }
             }

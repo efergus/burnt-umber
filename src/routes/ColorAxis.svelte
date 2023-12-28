@@ -10,7 +10,6 @@
         tDiffuse_shader,
         white_shader
     } from '$lib/shaders/embed';
-    import { space } from '$lib/element/space';
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
     import { cx } from '$lib/classes';
