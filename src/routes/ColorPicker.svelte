@@ -3,11 +3,11 @@
         cylindrical,
         hsv,
     } from '$lib/shaders/embed';
-    import { ColorSpace, space, type Space } from '$lib/element/space';
+    import { ColorSpace } from '$lib/element/space';
     import { createEventDispatcher } from 'svelte';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
 
-    const dispatch = createEventDispatcher();
+    // const dispatch = createEventDispatcher<Vec3>();
     export let color = vec3(1, 1, 1);
     export let slice = 1;
     let canvas: HTMLCanvasElement;
@@ -24,8 +24,9 @@
             space_embedding: cylindrical,
             color_embedding: hsv,
 
-            onChange: (color) => {
-                dispatch('change', color);
+            onChange: (c) => {
+                // dispatch('change', color);
+                color = c;
             }
         });
         render();

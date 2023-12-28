@@ -24,8 +24,6 @@
                     (color.y - i / 12) * 100
                 }%)`
         );
-
-    let active: HTMLElement | undefined = undefined;
 </script>
 
 <div id="main">
@@ -47,7 +45,7 @@
                 <ColorAxis bind:color axis={AXIS.X} />
                 <ColorChip {color} />
                 <ColorAxis bind:color axis={AXIS.Y} />
-                <ColorPicker bind:color on:change />
+                <ColorPicker bind:color />
                 <Palette colors={palette_colors} />
                 <div />
                 <ColorAxis bind:color axis={AXIS.Z} />

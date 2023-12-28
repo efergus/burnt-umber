@@ -15,11 +15,32 @@ export interface Axis extends ColorElement {
 
 export class Axis {
     static new(
+        canvas: HTMLCanvasElement,
         // space_embedding: Embedding,
         color_embedding: Embedding,
-        tag: number,
         axis: AXIS
     ): Axis {
+        const rect = canvas.getBoundingClientRect();
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(rect.width, rect.height);
+        renderer.autoClear = false;
+
+        const scene = new THREE.Scene();
+        const aspect = rect.width / rect.height;
+        const width = aspect > 1 ? 1 : aspect;
+        const height = aspect > 1 ? 1 / aspect : 1;
+        console.log(width, height);
+        const camera = new THREE.OrthographicCamera(
+            -width / 2,
+            width / 2,
+            height / 2,
+            -height / 2,
+            0.1,
+            100
+        );
+        camera.position.z = 1;
+        camera.lookAt(0, 0, 0);
+
         const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
         const cursor_geometry = new THREE.SphereGeometry(0.05, 8, 8);
         const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
@@ -37,7 +58,7 @@ export class Axis {
             fragmentShader: frag(pick_shader),
             uniforms: {
                 embedMatrix: { value: embedMatrix },
-                tag: { value: tag }
+                tag: { value: 1 }
             }
         });
         const cursor_material = new THREE.ShaderMaterial({
@@ -52,18 +73,13 @@ export class Axis {
         const pick_mesh = new THREE.Mesh(geometry.clone(), pick_material);
         const cursor_mesh = new THREE.Mesh(cursor_geometry, cursor_material);
 
+        const scale = Math.min(width, height);
         if (axis == AXIS.X) {
-            mesh.scale.y = 0.2;
-            // mesh.position.y = 0.9;
-            // cursor_mesh.position.y = 0.9;
+            mesh.scale.y = scale;
         } else if (axis == AXIS.Y) {
-            mesh.scale.x = 0.2;
-            // mesh.position.x = -0.9;
-            // cursor_mesh.position.x = -0.9;
+            mesh.scale.x = scale;
         } else if (axis == AXIS.Z) {
-            mesh.scale.y = 0.2;
-            // mesh.position.y = -0.9;
-            // cursor_mesh.position.y = -0.9;
+            mesh.scale.y = scale;
         } else {
             throw new Error(`Unknown axis ${axis}`);
         }
@@ -71,10 +87,10 @@ export class Axis {
         pick_mesh.scale.copy(mesh.scale);
         pick_mesh.position.copy(mesh.position);
 
+        scene.add(mesh, cursor_mesh);
+
         return {
             ortho: true,
-            meshes: [mesh, cursor_mesh],
-            pick_meshes: [pick_mesh],
             color_embedding,
             input_pos: new THREE.Vector3(),
             on_input_change(pos: THREE.Vector3) {
