@@ -13,11 +13,12 @@
     import { cameraController } from '$lib/element/controller';
     import { AXIS, Axis } from '$lib/element/axis';
     import { cx } from '$lib/classes';
-    import { vec3 } from '$lib/geometry/vec';
+    import { vec3, type Vec3 } from '$lib/geometry/vec';
     import { createEventDispatcher } from 'svelte';
 
     const dispatch = createEventDispatcher();
     export let axis: AXIS;
+    export let input = vec3(0, 0, 0);
     export let color = vec3(0.5, 1, 1);
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
@@ -27,8 +28,9 @@
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
 
-        axisElement = Axis.new(canvas, embed.hsv, axis, (c) => {
+        axisElement = Axis.new(canvas, embed.hsv, axis, ({color: c, input: i}) => {
             color = c;
+            input = i;
             // dispatch('change', c);
         });
         axisElement.on_input_change(new THREE.Vector3(...color));
@@ -52,12 +54,12 @@
         animate();
     };
 
-    export const set_color = (color: THREE.Vector3) => {
-        axisElement?.set_color(color);
+    export const set = (color: Vec3, input: Vec3) => {
+        axisElement?.set({ color, input });
     };
 
     $: start(canvas);
-    $: set_color(color);
+    $: set(color, input);
 </script>
 
 <div class="w-full h-full">

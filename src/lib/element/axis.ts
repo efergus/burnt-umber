@@ -1,7 +1,8 @@
 import { frag, vert } from '$lib/shaders';
-import { type Embedding, black_shader } from '$lib/shaders/embed';
+import { type Embedding, black_shader, type InvertibleEmbedding } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import type { ColorElement } from '.';
+import { near, type Vec3 } from '$lib/geometry/vec';
 
 export enum AXIS {
     X = 0,
@@ -9,14 +10,20 @@ export enum AXIS {
     Z = 2
 }
 
+type ColorState = {
+    color: Vec3;
+    input: Vec3;
+    saved_color?: Vec3;
+};
+
 export interface Axis extends ColorElement {
     color_embedding: Embedding;
     input_pos: THREE.Vector3;
     color: THREE.Vector3;
     saved_color: THREE.Vector3;
 
-    onChange?: (color: THREE.Vector3) => void;
-    set_color(color: THREE.Vector3): void;
+    onChange?: (params: ColorState) => void;
+    set(params: ColorState): void;
 
     pick(x: number, y: number): THREE.Vector3;
     render(): void;
@@ -31,7 +38,7 @@ export class Axis {
         // space_embedding: Embedding,
         color_embedding: Embedding,
         axis: AXIS,
-        onChange?: (color: THREE.Vector3) => void
+        onChange?: (params: ColorState) => void
     ): Axis {
         const rect = canvas.getBoundingClientRect();
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -129,9 +136,23 @@ export class Axis {
                     cursor_mesh.position.x = pos.z - 0.5;
                 }
             },
-            set_color(color: THREE.Vector3) {
+            set({ color, input, saved_color }) {
+                if (near(this.color, color)) {
+                    return;
+                }
+                console.log(...color);
                 this.color.copy(color);
-                this.saved_color.copy(color);
+                this.input_pos.copy(input);
+                if (saved_color && !near(this.saved_color, saved_color)) {
+                    this.saved_color.copy(saved_color);
+                }
+
+                if (axis === AXIS.Y) {
+                    cursor_mesh.position.y = color.y - 0.5;
+                } else {
+                    cursor_mesh.position.x = color.getComponent(axis) - 0.5;
+                }
+                this.on_input_change(color);
             },
             render() {
                 renderer.clear();
@@ -157,22 +178,21 @@ export class Axis {
             mouse_select(e: MouseEvent) {
                 const { x, y } = this.mouse_position(e);
                 const picked = this.pick(x, y);
-                console.log(picked);
-                if (picked) {
-                    this.color = picked.clone();
-                } else {
-                    this.color = this.saved_color.clone();
-                }
-                this.onChange?.(this.color);
-                const selecting = e.buttons === 1;
-                if (selecting && picked) {
-                    this.saved_color = picked.clone();
-                }
-                if (axis === AXIS.Y) {
-                    cursor_mesh.position.y = y / rect.height - 0.5;
-                } else {
-                    cursor_mesh.position.x = x / rect.width - 0.5;
-                }
+                // if (picked) {
+                //     this.color = picked.clone();
+                //     // if (axis === AXIS.Y) {
+                //     //     this.input_pos.y = picked.y;
+                //     // } else {
+                //     //     this.input_pos.setComponent(axis, picked.x);
+                //     // }
+                // } else {
+                //     this.color = this.saved_color.clone();
+                // }
+                // const selecting = e.buttons === 1;
+                // if (selecting && picked) {
+                //     this.saved_color = picked.clone();
+                // }
+                this.set({ color: picked, input: this.input_pos });
             }
         };
     }

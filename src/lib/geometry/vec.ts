@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 
+export type Vec2 = THREE.Vector2;
+export type Vec3 = THREE.Vector3;
+
+export type Mat3 = THREE.Matrix3;
+export type Mat4 = THREE.Matrix4;
+
 export function vec3(x?: number, y?: number, z?: number): THREE.Vector3 {
     return new THREE.Vector3(x, y, z);
 }
@@ -18,6 +24,10 @@ export function cross(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3 {
     return tmp.cross(b);
 }
 
+export function near(a: Vec3, b: Vec3, eps = 1e-6): boolean {
+    return a.distanceTo(b) < eps;
+}
+
 export const unit = {
     x: vec3(1, 0, 0),
     y: vec3(0, 1, 0),
@@ -25,9 +35,3 @@ export const unit = {
 };
 
 export const units = [unit.x, unit.y, unit.z];
-
-export type Vec2 = THREE.Vector2;
-export type Vec3 = THREE.Vector3;
-
-export type Mat3 = THREE.Matrix3;
-export type Mat4 = THREE.Matrix4;

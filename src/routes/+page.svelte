@@ -13,6 +13,7 @@
     import { sx } from '$lib/classes';
     import { vec3 } from '$lib/geometry/vec';
     let color = vec3(0.5, 1, 1);
+    let input = vec3(0, 0, 0);
 
     // let wasm = init();
     let palette_colors: string[] = [];
@@ -42,13 +43,13 @@
                 })}
             >
                 <div />
-                <ColorAxis bind:color axis={AXIS.X} />
+                <ColorAxis bind:color bind:input axis={AXIS.X} />
                 <ColorChip {color} />
-                <ColorAxis bind:color axis={AXIS.Y} />
+                <ColorAxis bind:color bind:input axis={AXIS.Y} />
                 <ColorPicker bind:color />
                 <Palette colors={palette_colors} />
                 <div />
-                <ColorAxis bind:color axis={AXIS.Z} />
+                <ColorAxis bind:color bind:input axis={AXIS.Z} />
             </div>
         </div>
     </Center>
