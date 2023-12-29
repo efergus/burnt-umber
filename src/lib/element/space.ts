@@ -1,4 +1,4 @@
-import { vec3, type Vec3 } from '$lib/geometry/vec';
+import { near, vec3, type Vec3 } from '$lib/geometry/vec';
 import { definitions, frag, vert } from '$lib/shaders';
 import {
     pick_shader,
@@ -214,7 +214,14 @@ export class ColorSpace {
     }
 
     set({ color, saved_color }: { color: Vec3; saved_color?: Vec3 }) {
-        this.color = color;
+        console.log(color, this.color);
+        if (near(color, this.color)) {
+            return;
+        }
+        this.color = color.clone();
+        const position = this.cube.space_embedding.embed!(color);
+        console.log(color, position);
+        this.cursor.set(position);
         // this.saved_color = saved_color;
     }
 
@@ -236,9 +243,9 @@ export class ColorSpace {
         const { x, y } = this.mouse_position(e);
         const picked = this.pick(x, y);
         if (picked) {
-            this.color = picked.clone();
+            this.set({ color: picked });
         } else {
-            this.color = vec3(...this.saved_color);
+            this.set({ color: this.saved_color });
         }
         this.onChange?.(this.color);
         const selecting = e.buttons === 1;
@@ -248,8 +255,7 @@ export class ColorSpace {
             }
             this.cameraController.on_move(vec3(e.movementX, e.movementY, 0.0));
         }
-        const position = this.cube.space_embedding.embed!(this.color);
-        this.cursor.set(position);
+
     }
 
     pick(x: number, y: number): Vec3 | undefined {

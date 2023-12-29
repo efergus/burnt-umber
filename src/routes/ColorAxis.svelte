@@ -28,9 +28,10 @@
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
 
-        axisElement = Axis.new(canvas, embed.hsv, axis, ({color: c, input: i}) => {
+        axisElement = Axis.new(canvas, embed.hsv, axis, ({ color: c, input: i }) => {
+            // console.log('CHANGE', c);
             color = c;
-            input = i;
+            // input = i;
             // dispatch('change', c);
         });
         axisElement.on_input_change(new THREE.Vector3(...color));

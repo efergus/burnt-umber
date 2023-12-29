@@ -140,7 +140,6 @@ export class Axis {
                 if (near(this.color, color)) {
                     return;
                 }
-                console.log(...color);
                 this.color.copy(color);
                 this.input_pos.copy(input);
                 if (saved_color && !near(this.saved_color, saved_color)) {
@@ -193,6 +192,7 @@ export class Axis {
                 //     this.saved_color = picked.clone();
                 // }
                 this.set({ color: picked, input: this.input_pos });
+                this.onChange?.({ color: picked, input: this.input_pos });
             }
         };
     }

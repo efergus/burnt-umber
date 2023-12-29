@@ -35,6 +35,7 @@
     };
 
     export const set_color = (color: Vec3) => {
+        // console.log('SET');
         colorspace?.set({ color });
     };
 
