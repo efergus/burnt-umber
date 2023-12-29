@@ -1,5 +1,5 @@
 import { frag, vert } from '$lib/shaders';
-import { type Embedding, black_shader, type InvertibleEmbedding } from '$lib/shaders/embed';
+import { type Embedding, black_shader } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import type { ColorElement } from '.';
 import { near, type Vec3 } from '$lib/geometry/vec';
@@ -28,6 +28,7 @@ export interface Axis extends ColorElement {
 
     mouse_position(e: MouseEvent): { x: number; y: number };
     mouse_select(e: MouseEvent): void;
+    restore(): void;
 }
 
 export class Axis {
@@ -47,7 +48,6 @@ export class Axis {
         const aspect = rect.width / rect.height;
         const width = aspect > 1 ? 1 : aspect;
         const height = aspect > 1 ? 1 / aspect : 1;
-        console.log(width, height);
         const camera = new THREE.OrthographicCamera(
             -width / 2,
             width / 2,
@@ -133,13 +133,13 @@ export class Axis {
                 }
             },
             set({ color, saved_color }) {
+                if (saved_color && !near(this.saved_color, saved_color)) {
+                    this.saved_color.copy(saved_color);
+                }
                 if (near(this.color, color)) {
                     return;
                 }
                 this.color.copy(color);
-                if (saved_color && !near(this.saved_color, saved_color)) {
-                    this.saved_color.copy(saved_color);
-                }
 
                 if (axis === AXIS.Y) {
                     cursor_mesh.position.y = color.y - 0.5;
@@ -172,8 +172,20 @@ export class Axis {
             mouse_select(e: MouseEvent) {
                 const { x, y } = this.mouse_position(e);
                 const picked = this.pick(x, y);
-                this.set({ color: picked });
-                this.onChange?.({ color: picked });
+                const selecting = e.buttons === 1;
+                if (selecting) {
+                    this.set({ color: picked, saved_color: picked });
+                    this.onChange?.({ color: picked, saved_color: picked.clone() });
+                    console.log('selecting', ...picked);
+                }
+                else {
+                    this.set({ color: picked });
+                    this.onChange?.({ color: picked });
+                }
+            },
+            restore() {
+                this.set({ color: this.saved_color });
+                this.onChange?.({ color: this.saved_color });
             }
         };
     }

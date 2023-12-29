@@ -217,9 +217,11 @@ export class ColorSpace {
         if (near(color, this.color)) {
             return;
         }
+        if (saved_color) {
+            this.saved_color.copy(saved_color);
+        }
         this.color = color.clone();
         const position = this.cube.space_embedding.embed!(color);
-        console.log(color, position);
         this.cursor.set(position);
         // this.saved_color = saved_color;
     }

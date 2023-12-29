@@ -19,6 +19,7 @@
     const dispatch = createEventDispatcher();
     export let axis: AXIS;
     export let color = vec3(0.5, 1, 1);
+    export let saved_color = vec3(0.5, 1, 1);
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
 
@@ -27,8 +28,11 @@
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
 
-        axisElement = Axis.new(canvas, embed.hsv, axis, ({ color: c }) => {
+        axisElement = Axis.new(canvas, embed.hsv, axis, ({ color: c, saved_color: s }) => {
             color = c;
+            if (s) {
+                saved_color = s;
+            }
         });
         axisElement.on_input_change(new THREE.Vector3(...color));
 
@@ -48,11 +52,17 @@
         canvas.onmousemove = (e) => {
             axisElement.mouse_select(e);
         };
+        canvas.onmousedown = (e) => {
+            axisElement.mouse_select(e);
+        };
+        canvas.onmouseleave = () => {
+            axisElement.restore();
+        };
         animate();
     };
 
     export const set = (color: Vec3) => {
-        axisElement?.set({ color });
+        axisElement?.set({ color, saved_color });
     };
 
     $: start(canvas);

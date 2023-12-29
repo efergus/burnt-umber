@@ -6,6 +6,7 @@
 
     // const dispatch = createEventDispatcher<Vec3>();
     export let color = vec3(1, 1, 1);
+    export let saved_color = vec3(1, 1, 1);
     export let slice = 1;
     let canvas: HTMLCanvasElement;
     let colorspace: ColorSpace;
@@ -24,6 +25,7 @@
             onChange: (c) => {
                 // dispatch('change', color);
                 color = c;
+                saved_color = c;
             }
         });
         render();
@@ -34,13 +36,13 @@
         requestAnimationFrame(render);
     };
 
-    export const set_color = (color: Vec3) => {
+    export const set_color = (color: Vec3, saved_color: Vec3) => {
         // console.log('SET');
-        colorspace?.set({ color });
+        colorspace?.set({ color, saved_color });
     };
 
     $: start(canvas);
-    $: set_color(color);
+    $: set_color(color, saved_color);
 </script>
 
 <div class="w-96 h-96">
