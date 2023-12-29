@@ -12,20 +12,22 @@
     import Palette from './Palette.svelte';
     import { sx } from '$lib/classes';
     import { vec3 } from '$lib/geometry/vec';
+    import Color from 'colorjs.io';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
-    let input = vec3(0, 0, 0);
 
-    // let wasm = init();
     let palette_colors: string[] = [];
-    $: palette_colors = new Array(6)
-        .fill('')
-        .map(
-            (_, i) =>
-                `hsl(${(color.x + i / 12) * 360}, ${(color.z - i / 12) * 100}%, ${
-                    (color.y - i / 12) * 100
-                }%)`
-        );
+    $: palette_colors = new Array(6).fill('').map((_, i) => {
+        const display_color = new Color('hsv', [
+            (color.x + i / 12) * 360,
+            color.z * 100,
+            color.y * 100
+        ]);
+        console.log(...color);
+        const val = display_color.display().toString();
+        console.log(val);
+        return val;
+    });
 </script>
 
 <div id="main">
