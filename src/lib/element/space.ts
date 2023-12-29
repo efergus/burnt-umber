@@ -214,7 +214,6 @@ export class ColorSpace {
     }
 
     set({ color, saved_color }: { color: Vec3; saved_color?: Vec3 }) {
-        console.log(color, this.color);
         if (near(color, this.color)) {
             return;
         }

@@ -18,7 +18,6 @@
 
     const dispatch = createEventDispatcher();
     export let axis: AXIS;
-    export let input = vec3(0, 0, 0);
     export let color = vec3(0.5, 1, 1);
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
@@ -28,11 +27,8 @@
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
 
-        axisElement = Axis.new(canvas, embed.hsv, axis, ({ color: c, input: i }) => {
-            // console.log('CHANGE', c);
+        axisElement = Axis.new(canvas, embed.hsv, axis, ({ color: c }) => {
             color = c;
-            // input = i;
-            // dispatch('change', c);
         });
         axisElement.on_input_change(new THREE.Vector3(...color));
 
@@ -55,12 +51,12 @@
         animate();
     };
 
-    export const set = (color: Vec3, input: Vec3) => {
-        axisElement?.set({ color, input });
+    export const set = (color: Vec3) => {
+        axisElement?.set({ color });
     };
 
     $: start(canvas);
-    $: set(color, input);
+    $: set(color);
 </script>
 
 <div class="w-full h-full">

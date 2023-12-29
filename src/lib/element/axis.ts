@@ -12,13 +12,11 @@ export enum AXIS {
 
 type ColorState = {
     color: Vec3;
-    input: Vec3;
     saved_color?: Vec3;
 };
 
 export interface Axis extends ColorElement {
     color_embedding: Embedding;
-    input_pos: THREE.Vector3;
     color: THREE.Vector3;
     saved_color: THREE.Vector3;
 
@@ -101,10 +99,8 @@ export class Axis {
             color: new THREE.Vector3(0, 0, 0),
             saved_color: new THREE.Vector3(0, 0, 0),
             color_embedding,
-            input_pos: new THREE.Vector3(),
             onChange,
             on_input_change(pos: THREE.Vector3) {
-                this.input_pos.copy(pos);
                 if (axis == AXIS.X) {
                     const embedMatrix = new THREE.Matrix4().makeTranslation(
                         boundingBox.min.x,
@@ -136,12 +132,11 @@ export class Axis {
                     cursor_mesh.position.x = pos.z - 0.5;
                 }
             },
-            set({ color, input, saved_color }) {
+            set({ color, saved_color }) {
                 if (near(this.color, color)) {
                     return;
                 }
                 this.color.copy(color);
-                this.input_pos.copy(input);
                 if (saved_color && !near(this.saved_color, saved_color)) {
                     this.saved_color.copy(saved_color);
                 }
@@ -177,22 +172,8 @@ export class Axis {
             mouse_select(e: MouseEvent) {
                 const { x, y } = this.mouse_position(e);
                 const picked = this.pick(x, y);
-                // if (picked) {
-                //     this.color = picked.clone();
-                //     // if (axis === AXIS.Y) {
-                //     //     this.input_pos.y = picked.y;
-                //     // } else {
-                //     //     this.input_pos.setComponent(axis, picked.x);
-                //     // }
-                // } else {
-                //     this.color = this.saved_color.clone();
-                // }
-                // const selecting = e.buttons === 1;
-                // if (selecting && picked) {
-                //     this.saved_color = picked.clone();
-                // }
-                this.set({ color: picked, input: this.input_pos });
-                this.onChange?.({ color: picked, input: this.input_pos });
+                this.set({ color: picked });
+                this.onChange?.({ color: picked });
             }
         };
     }

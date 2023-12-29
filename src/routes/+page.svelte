@@ -43,13 +43,13 @@
                 })}
             >
                 <div />
-                <ColorAxis bind:color bind:input axis={AXIS.X} />
+                <ColorAxis bind:color axis={AXIS.X} />
                 <ColorChip {color} />
-                <ColorAxis bind:color bind:input axis={AXIS.Y} />
+                <ColorAxis bind:color axis={AXIS.Y} />
                 <ColorPicker bind:color />
                 <Palette colors={palette_colors} />
                 <div />
-                <ColorAxis bind:color bind:input axis={AXIS.Z} />
+                <ColorAxis bind:color axis={AXIS.Z} />
             </div>
         </div>
     </Center>
