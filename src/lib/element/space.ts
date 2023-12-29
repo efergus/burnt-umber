@@ -63,7 +63,7 @@ class ColorSpaceCube {
             vertexShader: vert(embed_shader, space_embedding.shader),
             fragmentShader: definitions('USE_CLIP_PLANE') + frag(color_embedding.shader),
             uniforms: {
-                clipPlane: { value: new THREE.Vector4(0, 0, 1, 1) },
+                clipPlane: { value: new THREE.Vector4(0, 0, 1, 1.1) },
                 embedMatrix: { value: embedMatrix }
             }
         });
@@ -71,7 +71,7 @@ class ColorSpaceCube {
             vertexShader: vert(embed_shader, space_embedding.shader),
             fragmentShader: definitions('USE_CLIP_PLANE') + frag(pick_shader),
             uniforms: {
-                clipPlane: { value: new THREE.Vector4(0, 0, 1, 1) },
+                clipPlane: { value: new THREE.Vector4(0, 0, 1, 1.1) },
                 embedMatrix: { value: embedMatrix },
                 tag: { value: 1 }
             }
