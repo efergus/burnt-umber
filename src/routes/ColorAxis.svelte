@@ -55,7 +55,8 @@
         canvas.onmousedown = (e) => {
             axisElement.mouse_select(e);
         };
-        canvas.onmouseleave = () => {
+        canvas.onmouseleave = (e) => {
+            axisElement.mouse_select(e);
             axisElement.restore();
         };
         animate();

@@ -22,17 +22,24 @@
             space_embedding: cylindrical,
             color_embedding: hsv,
 
-            onChange: (c) => {
+            onChange: ({ color: c, saved_color: s }) => {
                 // dispatch('change', color);
                 color = c;
-                saved_color = c;
+                saved_color = s ?? c;
             }
         });
         render();
     };
 
     const render = () => {
-        colorspace?.render();
+        colorspace?.render([
+            {
+                pos: color
+            },
+            {
+                pos: saved_color
+            }
+        ]);
         requestAnimationFrame(render);
     };
 

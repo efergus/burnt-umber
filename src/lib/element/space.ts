@@ -9,6 +9,13 @@ import {
 import * as THREE from 'three';
 import { cameraController, type CameraController } from './controller';
 import type { ColorElement } from '.';
+import type { ColorState } from './axis';
+
+export interface CursorSpec {
+    pos: Vec3;
+    color?: Vec3;
+    size?: number;
+}
 
 export interface Space extends ColorElement {
     space_embedding: Embedding;
@@ -100,7 +107,7 @@ export interface ColorSpaceParams {
     color_embedding: Embedding;
     slice: number;
 
-    onChange?: (color: Vec3) => void;
+    onChange?: (state: ColorState) => void;
 }
 
 export class ColorSpace {
@@ -115,9 +122,9 @@ export class ColorSpace {
     pickTarget: THREE.WebGLRenderTarget;
 
     cube: ColorSpaceCube;
-    cursor: Cursor;
+    cursors: Cursor[];
 
-    onChange?: (color: Vec3) => void;
+    onChange?: (color: ColorState) => void;
 
     constructor({
         color,
@@ -130,7 +137,7 @@ export class ColorSpace {
         pickScene,
         pickTarget,
         cube,
-        cursor,
+        cursors,
         onChange
     }: WithoutMethods<ColorSpace>) {
         this.canvas = canvas;
@@ -144,7 +151,7 @@ export class ColorSpace {
         this.pickTarget = pickTarget;
 
         this.cube = cube;
-        this.cursor = cursor;
+        this.cursors = cursors;
 
         this.onChange = onChange;
 
@@ -209,7 +216,7 @@ export class ColorSpace {
             pickScene,
             pickTarget,
             cube,
-            cursor
+            cursors: [cursor],
         });
     }
 
@@ -221,12 +228,29 @@ export class ColorSpace {
             this.saved_color.copy(saved_color);
         }
         this.color = color.clone();
-        const position = this.cube.space_embedding.embed!(color);
-        this.cursor.set(position);
+        // const position = this.cube.space_embedding.embed!(color);
         // this.saved_color = saved_color;
     }
 
-    render() {
+    render(cursors?: CursorSpec[]) {
+        if (cursors) {
+            for (let i = 0; i < cursors.length; i++) {
+                if (!this.cursors[i]) {
+                    this.cursors.push(new Cursor(this.screenScene));
+                }
+                const position = this.cube.space_embedding.embed!(cursors[i].pos);
+                this.cursors[i].mesh.position.copy(position);
+                this.cursors[i].mesh.scale.setScalar(cursors[i].size ?? 1);
+                this.cursors[i].mesh.visible = true;
+            }
+            for (let i = cursors.length; i < this.cursors.length; i++) {
+                this.cursors[i].mesh.visible = false;
+            }
+        }
+        else if (this.cursors.length) {
+            const position = this.cube.space_embedding.embed!(this.color);
+            this.cursors[0].mesh.position.copy(position)
+        }
         const renderer = this.renderer;
         renderer.setRenderTarget(null);
         renderer.clear();
@@ -248,7 +272,10 @@ export class ColorSpace {
         } else {
             this.set({ color: this.saved_color });
         }
-        this.onChange?.(this.color);
+        this.onChange?.({
+            color: this.color,
+            saved_color: this.saved_color,
+        });
         const selecting = e.buttons === 1;
         if (selecting) {
             if (picked) {

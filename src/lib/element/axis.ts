@@ -3,6 +3,7 @@ import { type Embedding, black_shader } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import type { ColorElement } from '.';
 import { near, type Vec3 } from '$lib/geometry/vec';
+import { clamp } from '$lib/math';
 
 export enum AXIS {
     X = 0,
@@ -10,7 +11,7 @@ export enum AXIS {
     Z = 2
 }
 
-type ColorState = {
+export interface ColorState {
     color: Vec3;
     saved_color?: Vec3;
 };
@@ -153,8 +154,8 @@ export class Axis {
                 renderer.render(scene, camera);
             },
             pick(x: number, y: number) {
-                const px = x / rect.width;
-                const py = y / rect.height;
+                const px = clamp(x / rect.width);
+                const py = clamp(y / rect.height);
                 const color = this.color.clone();
                 if (axis === AXIS.Y) {
                     color.y = py;
