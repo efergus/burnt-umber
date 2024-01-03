@@ -44,11 +44,17 @@
             last_time = now;
             requestAnimationFrame(animate);
 
-            axisElement.render();
+            axisElement.render([
+                {
+                    pos: color,
+                    size: 0.2
+                },
+                {
+                    pos: saved_color,
+                    size: 0.3
+                }
+            ]);
         };
-        // canvas.oncontextmenu = (e) => {
-        //     e.preventDefault();
-        // };
         canvas.onmousemove = (e) => {
             axisElement.mouse_select(e);
         };

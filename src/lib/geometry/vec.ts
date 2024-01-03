@@ -10,6 +10,18 @@ export function vec3(x?: number, y?: number, z?: number): THREE.Vector3 {
     return new THREE.Vector3(x, y, z);
 }
 
+export function vec3x(x: number) {
+    return vec3(x, 0, 0);
+}
+
+export function vec3y(y: number) {
+    return vec3(0, y, 0);
+}
+
+export function vec3z(z: number) {
+    return vec3(0, 0, z);
+}
+
 export function vec2(x?: number, y?: number): THREE.Vector2 {
     return new THREE.Vector2(x, y);
 }

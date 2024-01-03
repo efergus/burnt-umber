@@ -1,9 +1,10 @@
 import { frag, vert } from '$lib/shaders';
-import { type Embedding, black_shader } from '$lib/shaders/embed';
+import type { Embedding } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import type { ColorElement } from '.';
-import { near, type Vec3 } from '$lib/geometry/vec';
+import { near, vec3x, type Vec3, vec3y } from '$lib/geometry/vec';
 import { clamp } from '$lib/math';
+import { setCursors, type CursorSpec, Cursor } from './cursor';
 
 export enum AXIS {
     X = 0,
@@ -25,7 +26,7 @@ export interface Axis extends ColorElement {
     set(params: ColorState): void;
 
     pick(x: number, y: number): THREE.Vector3;
-    render(): void;
+    render(cursors?: CursorSpec[]): void;
 
     mouse_position(e: MouseEvent): { x: number; y: number };
     mouse_select(e: MouseEvent): void;
@@ -61,7 +62,6 @@ export class Axis {
         camera.lookAt(0, 0, 0);
 
         const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
-        const cursor_geometry = new THREE.SphereGeometry(0.05, 8, 8);
         const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
         const embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.multiplyScalar(-1));
 
@@ -72,16 +72,8 @@ export class Axis {
                 embedMatrix: { value: embedMatrix }
             }
         });
-        const cursor_material = new THREE.ShaderMaterial({
-            vertexShader: vert(),
-            fragmentShader: frag(black_shader),
-            uniforms: {
-                embedMatrix: { value: new THREE.Matrix4() }
-            }
-        });
 
         const mesh = new THREE.Mesh(geometry, material);
-        const cursor_mesh = new THREE.Mesh(cursor_geometry, cursor_material);
 
         const scale = Math.min(width, height);
         if (axis == AXIS.X) {
@@ -94,7 +86,10 @@ export class Axis {
             throw new Error(`Unknown axis ${axis}`);
         }
 
-        scene.add(mesh, cursor_mesh);
+        scene.add(mesh);
+
+        const cursor = new Cursor(scene);
+        const cursor_objs = [cursor];
 
         return {
             color: new THREE.Vector3(0, 0, 0),
@@ -110,7 +105,7 @@ export class Axis {
                     );
                     embedMatrix.multiply(new THREE.Matrix4().makeScale(1, 0, 0));
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
-                    cursor_mesh.position.x = pos.x - 0.5;
+                    // cursor_mesh.position.x = pos.x - 0.5;
                 } else if (axis == AXIS.Y) {
                     const embedMatrix = new THREE.Matrix4().makeTranslation(
                         pos.x,
@@ -119,7 +114,7 @@ export class Axis {
                     );
                     embedMatrix.multiply(new THREE.Matrix4().makeScale(0, 1, 0));
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
-                    cursor_mesh.position.y = pos.y - 0.5;
+                    // cursor_mesh.position.y = pos.y - 0.5;
                 } else if (axis == AXIS.Z) {
                     let embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.x, 0, 0);
                     embedMatrix = new THREE.Matrix4()
@@ -130,7 +125,7 @@ export class Axis {
                         .makeTranslation(pos.x, pos.y, 0)
                         .multiply(embedMatrix);
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
-                    cursor_mesh.position.x = pos.z - 0.5;
+                    // cursor_mesh.position.x = pos.z - 0.5;
                 }
             },
             set({ color, saved_color }) {
@@ -141,15 +136,19 @@ export class Axis {
                     return;
                 }
                 this.color.copy(color);
-
-                if (axis === AXIS.Y) {
-                    cursor_mesh.position.y = color.y - 0.5;
-                } else {
-                    cursor_mesh.position.x = color.getComponent(axis) - 0.5;
-                }
                 this.on_input_change(color);
             },
-            render() {
+            render(cursors?: CursorSpec[]) {
+                setCursors(cursor_objs, {
+                    fallback: this.color,
+                    scene,
+                    specs: cursors,
+                    embedding: {
+                        [AXIS.X]: (v: Vec3) => vec3x(v.x - 0.5),
+                        [AXIS.Y]: (v: Vec3) => vec3y(v.y - 0.5),
+                        [AXIS.Z]: (v: Vec3) => vec3x(v.z - 0.5),
+                    }[axis]
+                })
                 renderer.clear();
                 renderer.render(scene, camera);
             },

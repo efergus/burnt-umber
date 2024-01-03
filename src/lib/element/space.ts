@@ -10,12 +10,7 @@ import * as THREE from 'three';
 import { cameraController, type CameraController } from './controller';
 import type { ColorElement } from '.';
 import type { ColorState } from './axis';
-
-export interface CursorSpec {
-    pos: Vec3;
-    color?: Vec3;
-    size?: number;
-}
+import { Cursor, setCursors, type CursorSpec } from './cursor';
 
 export interface Space extends ColorElement {
     space_embedding: Embedding;
@@ -25,27 +20,6 @@ export interface Space extends ColorElement {
 
     on_input_change(pos: THREE.Vector3, me?: boolean): void;
     set_slice(slice: number): void;
-}
-
-class Cursor {
-    mesh: THREE.Mesh;
-    constructor(scene: THREE.Scene) {
-        const geometry = new THREE.SphereGeometry(0.1, 16, 8);
-        const material = new THREE.ShaderMaterial({
-            vertexShader: vert(),
-            fragmentShader: frag(black_shader),
-            uniforms: {
-                embedMatrix: { value: new THREE.Matrix4() }
-            }
-        });
-        this.mesh = new THREE.Mesh(geometry, material);
-
-        scene.add(this.mesh);
-    }
-
-    set(pos: THREE.Vector3) {
-        this.mesh.position.copy(pos);
-    }
 }
 
 class ColorSpaceCube {
@@ -233,24 +207,12 @@ export class ColorSpace {
     }
 
     render(cursors?: CursorSpec[]) {
-        if (cursors) {
-            for (let i = 0; i < cursors.length; i++) {
-                if (!this.cursors[i]) {
-                    this.cursors.push(new Cursor(this.screenScene));
-                }
-                const position = this.cube.space_embedding.embed!(cursors[i].pos);
-                this.cursors[i].mesh.position.copy(position);
-                this.cursors[i].mesh.scale.setScalar(cursors[i].size ?? 1);
-                this.cursors[i].mesh.visible = true;
-            }
-            for (let i = cursors.length; i < this.cursors.length; i++) {
-                this.cursors[i].mesh.visible = false;
-            }
-        }
-        else if (this.cursors.length) {
-            const position = this.cube.space_embedding.embed!(this.color);
-            this.cursors[0].mesh.position.copy(position)
-        }
+        setCursors(this.cursors, {
+            fallback: this.color,
+            scene: this.screenScene,
+            embedding: this.cube.space_embedding.embed!,
+            specs: cursors,
+        })
         const renderer = this.renderer;
         renderer.setRenderTarget(null);
         renderer.clear();
