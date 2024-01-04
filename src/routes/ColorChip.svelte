@@ -13,6 +13,6 @@
     })}
 >
     <div class="absolute">
-        {color.toString({ precision: 2 })}
+        <!-- {color.toString({ precision: 2 })} -->
     </div>
 </div>
