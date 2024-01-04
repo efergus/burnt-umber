@@ -1,22 +1,59 @@
 <script lang="ts">
     import '../app.css';
-    import Canvas from './Canvas.svelte';
     // import Big from './Big.svelte';
     import Center from './Center.svelte';
-    import Colorpicker from './Colorpicker.svelte';
-    import init from '$lib/rust/rust';
+    // import RustColorpicker from './RustColorpicker.svelte';
+    // import init from '$lib/rust/rust';
+    import ColorPicker from './ColorPicker.svelte';
+    import Rtt from './RTT.svelte';
+    import ColorAxis from './ColorAxis.svelte';
+    import { AXIS } from '$lib/element/axis';
+    import ColorChip from './ColorChip.svelte';
+    import Palette from './Palette.svelte';
+    import { sx } from '$lib/classes';
+    import { vec3, type Vec3 } from '$lib/geometry/vec';
+    import Color from 'colorjs.io';
+    import ColorGrid from './ColorGrid.svelte';
+    let color = vec3(0.5, 1, 1);
+    let saved_color = vec3(0.5, 1, 1);
 
-    let wasm = init();
+    function intoHsvColor(color: Vec3) {
+        return new Color('hsv', [color.x * 360, color.z * 100, color.y * 100]);
+    }
+
+    $: selected_color = intoHsvColor(color);
 </script>
 
 <div id="main">
-    {#await wasm}
+    <!-- {#await wasm}
         Loading
-    {:then _}
-        <Center horizontal={1}>
-            <Colorpicker />
-        </Center>
-    {/await}
+    {:then _} -->
+    <Center>
+        <div class="flex gap-8 items-center">
+            <!-- <RustColorpicker /> -->
+            <!-- <Rtt /> -->
+            <div
+                class="grid"
+                style={sx({
+                    grid_template_columns: '4rem 1fr 4rem',
+                    grid_template_rows: '4rem 1fr 4rem'
+                })}
+            >
+                <div />
+                <ColorAxis bind:color bind:saved_color axis={AXIS.X} />
+                <ColorChip color={selected_color} />
+                <ColorAxis bind:color bind:saved_color axis={AXIS.Y} />
+                <ColorPicker bind:color bind:saved_color />
+                <Palette color={selected_color} />
+                <div />
+                <ColorAxis bind:color bind:saved_color axis={AXIS.Z} />
+            </div>
+            <div>
+                <ColorGrid bind:color />
+            </div>
+        </div>
+    </Center>
+    <!-- {/await} -->
 </div>
 
 <style>

@@ -4,7 +4,8 @@
     "private": true,
     "scripts": {
         "dev": "npm run build && vite dev",
-        "build": "npm run wasm && vite build",
+        "build": "vite build",
+        "rust-build": "npm run wasm && vite build",
         "wasm": "wasm-pack build rust --dev --target web --out-dir ../src/lib/rust",
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -32,5 +33,10 @@
         "vite": "^4.4.2"
     },
     "type": "module",
-    "dependencies": {}
+    "dependencies": {
+        "@types/three": "^0.158.1",
+        "colorjs.io": "^0.4.5",
+        "culori": "^3.2.0",
+        "three": "^0.158.0"
+    }
 }
