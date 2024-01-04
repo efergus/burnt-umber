@@ -11,8 +11,6 @@
     let canvas: HTMLCanvasElement;
     let colorspace: ColorSpace;
 
-    // export let thing_happened: (color: number[])=>void;
-
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
         colorspace = ColorSpace.new({
@@ -23,7 +21,6 @@
             color_embedding: hsv,
 
             onChange: ({ color: c, saved_color: s }) => {
-                // dispatch('change', color);
                 color = c;
                 saved_color = s ?? c;
             }

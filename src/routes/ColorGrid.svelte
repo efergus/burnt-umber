@@ -14,7 +14,6 @@
     export let scale_y = 1;
 
     let colors: { color: Color; selected: boolean }[] = [];
-    // export let space = 'hsv';
     function intoColor(color: Vec3) {
         const c = clampVec3(wrapAxis(AXIS.X, color));
         return new Color('hsv', [c.x * 360, c.z * 100, c.y * 100]);
@@ -27,7 +26,6 @@
         scale_x: number,
         scale_y: number
     ) {
-        // console.log('AAA', scale_x);
         const unit_x = vec3(1, 0, 0);
         const unit_y = vec3(0, 1, 0);
         if (axis === AXIS.Y) {
@@ -36,13 +34,7 @@
             unit_x.copy(unit.z);
         }
 
-        // const color_x = color.clone().multiply(unit_x);
-        // const color_y = color.clone().multiply(unit_y);
         const center = (steps - 1) / 2;
-        // const nx = Math.floor(color_x * steps);
-        // const ny = Math.floor(color_y * steps);
-        // const start_x = color_x - nx * (1 / steps);
-        // const start_y = color_y - ny * (1 / steps);
         colors = new Array(steps).fill(null).flatMap((_, i) => {
             return new Array(steps).fill(null).flatMap((_, j) => {
                 return {

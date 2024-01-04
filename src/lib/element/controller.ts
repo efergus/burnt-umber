@@ -1,13 +1,6 @@
 import * as THREE from 'three';
 
-const unit = {
-    x: new THREE.Vector3(1, 0, 0),
-    y: new THREE.Vector3(0, 1, 0),
-    z: new THREE.Vector3(0, 0, 1)
-};
-
 function spherical_to_cartesian(theta: number, phi: number, radius: number) {
-    // const sign = Math.sign(Math.cos(theta));
     return new THREE.Vector3(
         radius * Math.cos(theta) * Math.cos(phi),
         radius * Math.sin(theta),
@@ -20,7 +13,6 @@ export interface CameraController {
     theta: number;
     phi: number;
     radius: number;
-    // up: THREE.Vector3,
     lookAt: THREE.Vector3;
 
     on_move(delta: THREE.Vector3): void;
@@ -41,7 +33,6 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             );
             const cross =
                 this.theta > Math.PI / 2 !== new_theta > Math.PI / 2 && this.theta !== Math.PI / 2;
-            // console.log(cross, this.stick, this.theta, new_theta);
 
             if (cross) {
                 this.stick += delta.y;
@@ -69,8 +60,6 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             camera.up.copy(up);
             camera.position.copy(position);
             camera.lookAt(this.lookAt);
-
-            // console.log("MOVED", this.phi, ...camera.position)
         }
     };
     controller.on_move(new THREE.Vector3(0, 0, 0));

@@ -23,8 +23,6 @@
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
 
-    // const classnames = cx('border bg-gray-400', axis === AXIS.Y ? 'w-16 h-96' : 'w-96 h-16');
-
     const start = (canvas: HTMLCanvasElement) => {
         if (!canvas) return;
 

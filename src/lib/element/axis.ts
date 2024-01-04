@@ -105,7 +105,6 @@ export class Axis {
                     );
                     embedMatrix.multiply(new THREE.Matrix4().makeScale(1, 0, 0));
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
-                    // cursor_mesh.position.x = pos.x - 0.5;
                 } else if (axis == AXIS.Y) {
                     const embedMatrix = new THREE.Matrix4().makeTranslation(
                         pos.x,
@@ -114,7 +113,6 @@ export class Axis {
                     );
                     embedMatrix.multiply(new THREE.Matrix4().makeScale(0, 1, 0));
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
-                    // cursor_mesh.position.y = pos.y - 0.5;
                 } else if (axis == AXIS.Z) {
                     let embedMatrix = new THREE.Matrix4().makeTranslation(boundingBox.min.x, 0, 0);
                     embedMatrix = new THREE.Matrix4()
@@ -125,7 +123,6 @@ export class Axis {
                         .makeTranslation(pos.x, pos.y, 0)
                         .multiply(embedMatrix);
                     mesh.material.uniforms.embedMatrix.value = embedMatrix;
-                    // cursor_mesh.position.x = pos.z - 0.5;
                 }
             },
             set({ color, saved_color }) {

@@ -3,7 +3,6 @@ import { definitions, frag, vert } from '$lib/shaders';
 import {
     pick_shader,
     type Embedding,
-    black_shader,
     embed_shader,
 } from '$lib/shaders/embed';
 import * as THREE from 'three';
@@ -40,7 +39,6 @@ class ColorSpaceCube {
         embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
         const material = new THREE.ShaderMaterial({
-            // side: THREE.DoubleSide,
             vertexShader: vert(embed_shader, space_embedding.shader),
             fragmentShader: definitions('USE_CLIP_PLANE') + frag(color_embedding.shader),
             uniforms: {
@@ -202,8 +200,6 @@ export class ColorSpace {
             this.saved_color.copy(saved_color);
         }
         this.color = color.clone();
-        // const position = this.cube.space_embedding.embed!(color);
-        // this.saved_color = saved_color;
     }
 
     render(cursors?: CursorSpec[]) {
