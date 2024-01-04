@@ -1,13 +1,18 @@
 <script>
     import { sx } from '$lib/classes';
     import { vec3 } from '$lib/geometry/vec';
+    import Color from 'colorjs.io';
 
-    export let color = vec3(0.5, 1, 1);
+    export let color = new Color('srgb', [1, 1, 1]);
 </script>
 
 <div
-    class="w-full h-full"
+    class="w-full h-full min-h-[4rem] min-w-[4rem]"
     style={sx({
-        bg: `hsl(${color.x * 360}, ${color.z * 100}%, ${color.y * 100}%)`
+        bg: color.display().toString()
     })}
-/>
+>
+    <div class="absolute">
+        {color.toString({ precision: 2 })}
+    </div>
+</div>

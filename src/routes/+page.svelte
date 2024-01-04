@@ -11,30 +11,24 @@
     import ColorChip from './ColorChip.svelte';
     import Palette from './Palette.svelte';
     import { sx } from '$lib/classes';
-    import { vec3 } from '$lib/geometry/vec';
+    import { vec3, type Vec3 } from '$lib/geometry/vec';
     import Color from 'colorjs.io';
+    import ColorGrid from './ColorGrid.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
 
-    let palette_colors: string[] = [];
-    $: palette_colors = new Array(6).fill('').map((_, i) => {
-        const display_color = new Color('hsv', [
-            (color.x + i / 12) * 360,
-            color.z * 100,
-            color.y * 100
-        ]);
-        console.log(...color);
-        const val = display_color.display().toString();
-        console.log(val);
-        return val;
-    });
+    function intoHsvColor(color: Vec3) {
+        return new Color('hsv', [color.x * 360, color.z * 100, color.y * 100]);
+    }
+
+    $: selected_color = intoHsvColor(color);
 </script>
 
 <div id="main">
     <!-- {#await wasm}
         Loading
     {:then _} -->
-    <Center horizontal={1}>
+    <Center>
         <div class="flex gap-8 items-center">
             <!-- <RustColorpicker /> -->
             <!-- <Rtt /> -->
@@ -47,12 +41,15 @@
             >
                 <div />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.X} />
-                <ColorChip {color} />
+                <ColorChip color={selected_color} />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.Y} />
                 <ColorPicker bind:color bind:saved_color />
-                <Palette colors={palette_colors} />
+                <Palette color={selected_color} />
                 <div />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.Z} />
+            </div>
+            <div>
+                <ColorGrid bind:color />
             </div>
         </div>
     </Center>

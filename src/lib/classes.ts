@@ -3,7 +3,9 @@ type val = string | number | (string | number)[];
 export const cx = (...classes: (string | false | undefined | null)[]) =>
     classes.filter((x) => x).join(' ');
 
-const sx_map: Record<string, val | ((v: val, k: string) => string[])> = {
+const isNum = (x: val): x is number => typeof x === "number"
+
+const sx_map: Record<string, val | ((v: val, k: string) => string | string[])> = {
     w: 'width',
     h: 'height',
     x: 'left',
@@ -14,19 +16,23 @@ const sx_map: Record<string, val | ((v: val, k: string) => string[])> = {
     px: (v: val) => [`padding-left: ${to_px(v)}`, `padding-right: ${to_px(v)}`],
     py: (v: val) => [`padding-top: ${to_px(v)}`, `padding-bottom: ${to_px(v)}`],
     pos: 'position',
-    columns: 'grid-template-columns',
-    rows: 'grid-template-rows'
+    columns: (v: val) => {
+        return isNum(v) ? `grid-template-columns: repeat(${v}, 1fr)` : `grid-template-columns: ${v}`
+    },
+    rows: (v: val) => {
+        return isNum(v) ? `grid-template-rows: repeat(${v}, 1fr)` : `grid-template-rows: ${v}`
+    },
 };
 
-var pad_array = <T>(arr: T[], len: number, fill: T, trunc = true) => {
+const pad_array = <T>(arr: T[], len: number, fill: T, trunc = true) => {
     return arr.length > len ? arr : arr.concat(Array(len - arr.length).fill(fill));
 };
 
 const to_color_arr = (v: val): string[] =>
     Array.isArray(v)
         ? pad_array(v, 4, 1).map((x, i) =>
-              (i < 3 && !(typeof x === 'string') ? x * 255 : x).toString()
-          )
+            (i < 3 && !(typeof x === 'string') ? x * 255 : x).toString()
+        )
         : to_color_arr([v, v, v, 1]);
 
 const to_color = (v: val): string =>
@@ -37,7 +43,8 @@ const to_px = (v: val) => `${v}${typeof v === 'number' ? 'px' : ''}`;
 const sx_mapper = (k: string, v: val) => {
     const fn = sx_map[k];
     if (typeof fn === 'function') {
-        return fn(v, k).join('; ');
+        const res = fn(v, k);
+        return Array.isArray(res) ? res.join('; ') : res;
     }
     return `${fn ?? k.replace(/_/g, '-')}: ${to_px(v)}`;
 };

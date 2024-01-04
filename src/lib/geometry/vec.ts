@@ -40,6 +40,9 @@ export function near(a: Vec3, b: Vec3, eps = 1e-6): boolean {
     return a.distanceTo(b) < eps;
 }
 
+export const zeros = vec3(0, 0, 0);
+export const ones = vec3(1, 1, 1);
+
 export const unit = {
     x: vec3(1, 0, 0),
     y: vec3(0, 1, 0),
