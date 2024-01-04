@@ -1,3 +1,5 @@
+import type { AXIS } from '$lib/element/axis';
+import { clamp } from '$lib/math';
 import * as THREE from 'three';
 
 export type Vec2 = THREE.Vector2;
@@ -38,6 +40,14 @@ export function cross(a: THREE.Vector3, b: THREE.Vector3): THREE.Vector3 {
 
 export function near(a: Vec3, b: Vec3, eps = 1e-6): boolean {
     return a.distanceTo(b) < eps;
+}
+
+export function wrapAxis(axis: AXIS, vec: Vec3) {
+    const component = vec.getComponent(axis);
+    return vec.clone().setComponent(axis, component - Math.floor(component));
+}
+export function clampVec3(vec: Vec3) {
+    return vec3(clamp(vec.x), clamp(vec.y), clamp(vec.z));
 }
 
 export const zeros = vec3(0, 0, 0);

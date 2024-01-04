@@ -24,7 +24,7 @@ const sx_map: Record<string, val | ((v: val, k: string) => string | string[])> =
     },
 };
 
-const pad_array = <T>(arr: T[], len: number, fill: T, trunc = true) => {
+const pad_array = <T>(arr: T[], len: number, fill: T) => {
     return arr.length > len ? arr : arr.concat(Array(len - arr.length).fill(fill));
 };
 
