@@ -47,6 +47,7 @@ export function wrapAxis(axis: AXIS, vec: Vec3) {
     return vec.clone().setComponent(axis, component - Math.floor(component));
 }
 export function clampVec3(vec: Vec3) {
+    // console.log("clamp", ...vec)
     return vec3(clamp(vec.x), clamp(vec.y), clamp(vec.z));
 }
 

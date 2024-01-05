@@ -1,22 +1,20 @@
 <script lang="ts">
     import { cx, sx } from '$lib/classes';
     import { AXIS } from '$lib/element/axis';
-    import { clampVec3, ones, unit, vec3, wrapAxis, type Vec3 } from '$lib/geometry/vec';
-    import { scale } from 'svelte/transition';
+    import { unit, vec3, type Vec3 } from '$lib/geometry/vec';
     import ColorChip from './ColorChip.svelte';
-    import Color from 'colorjs.io';
-    import { clamp } from '$lib/math';
+    import { Color } from '$lib/color';
 
     export let color = vec3(0, 0, 0);
     export let axis: AXIS = AXIS.Y;
     export let steps = 7;
     export let scale_x = 0.1;
     export let scale_y = 1;
+    export let onClick: undefined | ((c: Color) => void) = undefined;
 
     let colors: { color: Color; selected: boolean }[] = [];
     function intoColor(color: Vec3) {
-        const c = clampVec3(wrapAxis(AXIS.X, color));
-        return new Color('hsv', [c.x * 360, c.z * 100, c.y * 100]);
+        return new Color('hsv', color);
     }
 
     function calculateColors(
@@ -67,7 +65,7 @@
     >
         {#each colors as color}
             <div class={cx('border hover:border-blue-500', color.selected && 'border-black')}>
-                <ColorChip color={color.color} />
+                <ColorChip color={color.color} {onClick} />
             </div>
         {/each}
     </div>
