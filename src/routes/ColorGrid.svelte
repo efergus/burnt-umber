@@ -54,7 +54,7 @@
 <div
     class="grid"
     style={sx({
-        columns: '1fr min'
+        columns: '1fr min-content'
     })}
 >
     <div
@@ -69,16 +69,29 @@
             </div>
         {/each}
     </div>
-    <div />
+    <input
+        type="range"
+        style={sx({
+            appearance: 'slider-vertical',
+            width: '20px'
+        })}
+        min={0.1}
+        max={1}
+        step={0.05}
+        value={scale_y}
+        on:input={(e) => {
+            const value = e.currentTarget.valueAsNumber;
+            scale_y = value;
+        }}
+    />
     <input
         type="range"
         min={0.1}
         max={1}
         step={0.05}
-        value="0.2"
+        value={scale_x}
         on:input={(e) => {
             const value = e.currentTarget.valueAsNumber;
-            console.log(value);
             scale_x = value;
         }}
     />
