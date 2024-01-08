@@ -3,14 +3,18 @@
     import { Color } from '$lib/color';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
 
+    export let selected = false;
     export let color = new Color('srgb', vec3(1, 1, 1));
     export let onClick: undefined | ((c: Color) => void) = undefined;
+
+    $: css = color.to_css();
 </script>
 
 <button
-    class="w-full h-full min-h-[4rem] min-w-[4rem]"
+    class="w-full h-full min-h-chip min-w-chip border-2 hover:!border-white"
     style={sx({
-        bg: color.to_css()
+        bg: css,
+        border_color: selected ? 'black' : css
     })}
     on:click={() => onClick?.(color)}
 >

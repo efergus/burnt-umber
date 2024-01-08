@@ -10,24 +10,23 @@
         colors.push(c);
         colors = colors;
     }
-    export const select = (c: Color) => {
-        console.log('select', c.toString());
+    export const select = (c: Color, save = true) => {
         const l = colors.length;
         if (!l) {
             return push(c);
         }
         const current = colors[l - 1];
-        if (current.near(c) && !colors[l - 2]?.near(c)) {
+        if (save && current.near(c) && !colors[l - 2]?.near(c)) {
             return push(c);
         }
         colors[l - 1] = c;
     };
 </script>
 
-<div class="flex">
-    {#each colors as color}
+<div class="flex min-h-chip gap-1 bg-slate-100">
+    {#each colors as color, index}
         <div>
-            <ColorChip {color} {onClick} />
+            <ColorChip {color} selected={index === colors.length - 1} {onClick} />
         </div>
     {/each}
 </div>

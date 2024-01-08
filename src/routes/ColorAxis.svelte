@@ -66,12 +66,12 @@
         animate();
     };
 
-    export const set = (color: Vec3) => {
+    export const set = (color: Vec3, saved_color: Vec3) => {
         axisElement?.set({ color, saved_color });
     };
 
     $: start(canvas);
-    $: set(color);
+    $: set(color, saved_color);
 </script>
 
 <div class="w-full h-full">

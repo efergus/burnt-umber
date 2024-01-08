@@ -19,10 +19,12 @@
     let saved_color = vec3(0.5, 1, 1);
     let history: History;
 
-    function set_color(c: Color) {
+    function set_color(c: Color, save = true) {
         color = c.get_norm();
-        saved_color = c.get_norm();
-        history.select(c);
+        history?.select(c, save);
+        if (save) {
+            saved_color = c.get_norm();
+        }
     }
 
     function intoHsvColor(color: Vec3) {
@@ -30,15 +32,16 @@
     }
 
     $: selected_color = intoHsvColor(color);
+    $: set_color(selected_color, false);
 </script>
 
 <div id="main">
     <!-- {#await wasm}
         Loading
     {:then _} -->
-    <History bind:this={history} />
+    <History bind:this={history} onClick={set_color} />
     <Center>
-        <div class="flex gap-8 items-center">
+        <div class="flex gap-8">
             <!-- <RustColorpicker /> -->
             <!-- <Rtt /> -->
             <div
@@ -50,7 +53,7 @@
             >
                 <div />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.X} />
-                <ColorChip color={selected_color} />
+                <ColorChip color={selected_color} onClick={set_color} />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.Y} />
                 <ColorPicker bind:color bind:saved_color />
                 <Palette color={selected_color} onClick={set_color} />
