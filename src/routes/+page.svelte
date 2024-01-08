@@ -41,7 +41,7 @@
     {:then _} -->
     <History bind:this={history} onClick={set_color} />
     <Center>
-        <div class="flex gap-8">
+        <div class="flex gap-8 flex-wrap">
             <!-- <RustColorpicker /> -->
             <!-- <Rtt /> -->
             <div
@@ -62,6 +62,9 @@
             </div>
             <div>
                 <ColorGrid bind:color onClick={set_color} />
+            </div>
+            <div>
+                <ColorGrid bind:color onClick={set_color} axis={AXIS.Z} />
             </div>
         </div>
     </Center>

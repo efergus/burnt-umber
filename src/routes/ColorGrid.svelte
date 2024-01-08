@@ -10,7 +10,7 @@
     export let steps = 7;
     export let scale_x = 0.1;
     export let scale_y = 1;
-    export let onClick: undefined | ((c: Color) => void) = undefined;
+    export let onClick: undefined | ((c: Color, save?: boolean) => void) = undefined;
 
     let colors: { color: Color; selected: boolean }[] = [];
     function intoColor(color: Vec3) {
@@ -65,7 +65,11 @@
     >
         {#each colors as color}
             <div>
-                <ColorChip color={color.color} selected={color.selected} {onClick} />
+                <ColorChip
+                    color={color.color}
+                    selected={color.selected}
+                    onClick={(c) => onClick?.(c, color.selected)}
+                />
             </div>
         {/each}
     </div>
