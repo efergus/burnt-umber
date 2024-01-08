@@ -64,13 +64,8 @@
         })}
     >
         {#each colors as color}
-            <div
-                class="border-2 hover:!border-white"
-                style={sx({
-                    border_color: color.selected ? 'black' : color.color.to_css()
-                })}
-            >
-                <ColorChip color={color.color} {onClick} />
+            <div>
+                <ColorChip color={color.color} selected={color.selected} {onClick} />
             </div>
         {/each}
     </div>

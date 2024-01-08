@@ -69,7 +69,6 @@ export class Color extends ColorJS {
 
     get_norm() {
         return vfcs[this.spaceId](this);
-        // return this.input.clone();
     }
 
     to_css(): string {

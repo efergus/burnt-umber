@@ -24,9 +24,9 @@
 </script>
 
 <div class="flex min-h-chip gap-1 bg-slate-100">
-    {#each colors as color}
+    {#each colors as color, index}
         <div>
-            <ColorChip {color} {onClick} />
+            <ColorChip {color} selected={index === colors.length - 1} {onClick} />
         </div>
     {/each}
 </div>
