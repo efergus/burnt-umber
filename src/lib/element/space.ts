@@ -241,18 +241,17 @@ export class ColorSpace {
         } else {
             this.set({ color: this.saved_color });
         }
+        const selecting = e.buttons === 1;
         this.onChange?.({
             color: this.color,
-            saved_color: this.saved_color,
+            saved_color: selecting ? this.color : this.saved_color,
         });
-        const selecting = e.buttons === 1;
         if (selecting) {
             if (picked) {
                 this.saved_color = picked.clone();
             }
             this.cameraController.on_move(vec3(e.movementX, e.movementY, 0.0));
         }
-
     }
 
     pick(x: number, y: number): Vec3 | undefined {

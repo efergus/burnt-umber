@@ -64,7 +64,12 @@
         })}
     >
         {#each colors as color}
-            <div class={cx('border hover:border-blue-500', color.selected && 'border-black')}>
+            <div
+                class="border-2 hover:!border-white"
+                style={sx({
+                    border_color: color.selected ? 'black' : color.color.to_css()
+                })}
+            >
                 <ColorChip color={color.color} {onClick} />
             </div>
         {/each}
@@ -73,7 +78,8 @@
         type="range"
         style={sx({
             appearance: 'slider-vertical',
-            width: '20px'
+            writing_mode: 'vertical-lr',
+            width: '2rem'
         })}
         min={0.1}
         max={1}
@@ -86,6 +92,9 @@
     />
     <input
         type="range"
+        style={sx({
+            height: '2rem'
+        })}
         min={0.1}
         max={1}
         step={0.05}
