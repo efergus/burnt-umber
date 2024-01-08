@@ -9,7 +9,7 @@
 
     let palette_colors: Color[];
     $: palette_colors = new Array(6).fill(color).map((_, i) => {
-        return color.add_norm(vec3(0.1 * i, -0.08 * i, 0));
+        return color.add_norm(vec3(0.08 * (i + 1), -0.08 * (i + 1), 0));
     });
 </script>
 

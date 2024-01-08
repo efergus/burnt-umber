@@ -79,4 +79,8 @@ export class Color extends ColorJS {
     to_vec(): Vec3 {
         return this.input.clone();
     }
+
+    near(c: Color, eps = 1e-6, space = "jzazbz"): boolean {
+        return this.distance(c, space) < eps;
+    }
 }

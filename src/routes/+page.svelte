@@ -14,12 +14,15 @@
     import { vec3, type Vec3 } from '$lib/geometry/vec';
     import ColorGrid from './ColorGrid.svelte';
     import { Color } from '$lib/color';
+    import History from './History.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
+    let history: History;
 
     function set_color(c: Color) {
         color = c.get_norm();
         saved_color = c.get_norm();
+        history.select(c);
     }
 
     function intoHsvColor(color: Vec3) {
@@ -33,6 +36,7 @@
     <!-- {#await wasm}
         Loading
     {:then _} -->
+    <History bind:this={history} />
     <Center>
         <div class="flex gap-8 items-center">
             <!-- <RustColorpicker /> -->
