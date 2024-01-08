@@ -1,4 +1,4 @@
-import { near, vec3, type Vec3 } from '$lib/geometry/vec';
+import { near, vec3, type Mat4, type Vec3 } from '$lib/geometry/vec';
 import { definitions, frag, vert } from '$lib/shaders';
 import {
     pick_shader,
@@ -22,10 +22,11 @@ export interface Space extends ColorElement {
 }
 
 class ColorSpaceCube {
-    mesh: THREE.Mesh;
-    pick_mesh: THREE.Mesh;
+    mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+    pick_mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
     space_embedding: Embedding;
     color_embedding: Embedding;
+    base_embedding_matrix: Mat4;
 
     constructor(
         scene: THREE.Scene,
@@ -64,6 +65,15 @@ class ColorSpaceCube {
 
         this.space_embedding = space_embedding;
         this.color_embedding = color_embedding;
+        this.base_embedding_matrix = embedMatrix;
+    }
+
+    set(input: Vec3) {
+        const embedMatrix = new THREE.Matrix4().makeScale(1, input.y, 1).multiply(
+            this.base_embedding_matrix
+        )
+        this.mesh.material.uniforms.embedMatrix.value = embedMatrix;
+        this.pick_mesh.material.uniforms.embedMatrix.value = embedMatrix;
     }
 }
 
@@ -200,6 +210,7 @@ export class ColorSpace {
             this.saved_color.copy(saved_color);
         }
         this.color = color.clone();
+        this.cube.set(color);
     }
 
     render(cursors?: CursorSpec[]) {

@@ -12,13 +12,21 @@
     import Palette from './Palette.svelte';
     import { sx } from '$lib/classes';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
-    import Color from 'colorjs.io';
     import ColorGrid from './ColorGrid.svelte';
+    import { Color } from '$lib/color';
+    import History from './History.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
+    let history: History;
+
+    function set_color(c: Color) {
+        color = c.get_norm();
+        saved_color = c.get_norm();
+        history.select(c);
+    }
 
     function intoHsvColor(color: Vec3) {
-        return new Color('hsv', [color.x * 360, color.z * 100, color.y * 100]);
+        return new Color('hsv', color);
     }
 
     $: selected_color = intoHsvColor(color);
@@ -28,6 +36,7 @@
     <!-- {#await wasm}
         Loading
     {:then _} -->
+    <History bind:this={history} />
     <Center>
         <div class="flex gap-8 items-center">
             <!-- <RustColorpicker /> -->
@@ -44,12 +53,12 @@
                 <ColorChip color={selected_color} />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.Y} />
                 <ColorPicker bind:color bind:saved_color />
-                <Palette color={selected_color} />
+                <Palette color={selected_color} onClick={set_color} />
                 <div />
                 <ColorAxis bind:color bind:saved_color axis={AXIS.Z} />
             </div>
             <div>
-                <ColorGrid bind:color />
+                <ColorGrid bind:color onClick={set_color} />
             </div>
         </div>
     </Center>
