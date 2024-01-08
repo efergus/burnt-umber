@@ -88,8 +88,7 @@ export class Axis {
 
         scene.add(mesh);
 
-        const cursor = new Cursor(scene);
-        const cursor_objs = [cursor];
+        const cursor_objs: Cursor[] = [];
 
         return {
             color: new THREE.Vector3(0, 0, 0),
@@ -139,6 +138,7 @@ export class Axis {
                 setCursors(cursor_objs, {
                     fallback: this.color,
                     scene,
+                    size: 0.6,
                     specs: cursors,
                     embedding: {
                         [AXIS.X]: (v: Vec3) => vec3x(v.x - 0.5),
@@ -173,7 +173,6 @@ export class Axis {
                 if (selecting) {
                     this.set({ color: picked, saved_color: picked });
                     this.onChange?.({ color: picked, saved_color: picked.clone() });
-                    console.log('selecting', ...picked);
                 }
                 else {
                     this.set({ color: picked });

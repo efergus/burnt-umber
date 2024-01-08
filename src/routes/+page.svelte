@@ -11,13 +11,16 @@
     import ColorChip from './ColorChip.svelte';
     import Palette from './Palette.svelte';
     import { sx } from '$lib/classes';
-    import { vec3, type Vec3 } from '$lib/geometry/vec';
+    import { near, vec3, type Vec3 } from '$lib/geometry/vec';
     import ColorGrid from './ColorGrid.svelte';
     import { Color } from '$lib/color';
     import History from './History.svelte';
+    import type { CursorSpec } from '$lib/element/cursor';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
+    let space_clicked_color = vec3(0.5, 1, 1);
     let history: History;
+    let history_colors: Color[] = [];
 
     function set_color(c: Color, save = true) {
         color = c.get_norm();
@@ -31,43 +34,77 @@
         return new Color('hsv', color);
     }
 
+    function doubleClickColor(c: Color) {
+        set_color(c, near(c.get_norm(), space_clicked_color));
+        space_clicked_color = c.get_norm();
+    }
+
     $: selected_color = intoHsvColor(color);
     $: set_color(selected_color, false);
+    $: cursors = [
+        {
+            pos: saved_color
+        },
+        ...history_colors.map<CursorSpec>((c, i) => ({
+            pos: c.get_norm(),
+            size: ((i + 1) / history_colors.length) * 0.95 + 0.05
+        }))
+    ];
 </script>
 
-<div id="main">
+<div id="main" class="flex flex-col justify-stretch">
     <!-- {#await wasm}
         Loading
     {:then _} -->
-    <History bind:this={history} onClick={set_color} />
-    <Center>
-        <div class="flex gap-8 flex-wrap">
-            <!-- <RustColorpicker /> -->
-            <!-- <Rtt /> -->
-            <div
-                class="grid"
-                style={sx({
-                    grid_template_columns: '4rem 1fr 4rem',
-                    grid_template_rows: '4rem 1fr 4rem'
-                })}
-            >
-                <div />
-                <ColorAxis bind:color bind:saved_color axis={AXIS.X} />
-                <ColorChip color={selected_color} onClick={set_color} />
-                <ColorAxis bind:color bind:saved_color axis={AXIS.Y} />
-                <ColorPicker bind:color bind:saved_color />
-                <Palette color={selected_color} onClick={set_color} />
-                <div />
-                <ColorAxis bind:color bind:saved_color axis={AXIS.Z} />
+    <History bind:this={history} bind:colors={history_colors} onClick={set_color} />
+    <div class="grow">
+        <Center>
+            <div class="flex gap-8 flex-wrap">
+                <!-- <RustColorpicker /> -->
+                <!-- <Rtt /> -->
+                <div
+                    class="grid"
+                    style={sx({
+                        grid_template_columns: '4rem 1fr 4rem',
+                        grid_template_rows: '4rem 1fr 4rem'
+                    })}
+                >
+                    <div />
+                    <ColorAxis
+                        bind:color
+                        bind:saved_color
+                        axis={AXIS.X}
+                        {cursors}
+                        onClick={doubleClickColor}
+                    />
+                    <ColorChip color={selected_color} onClick={set_color} />
+                    <ColorAxis
+                        bind:color
+                        bind:saved_color
+                        axis={AXIS.Y}
+                        {cursors}
+                        onClick={doubleClickColor}
+                    />
+                    <ColorPicker bind:color bind:saved_color {cursors} onClick={doubleClickColor} />
+                    <Palette color={selected_color} onClick={set_color} />
+                    <div />
+                    <ColorAxis
+                        bind:color
+                        bind:saved_color
+                        axis={AXIS.Z}
+                        {cursors}
+                        onClick={doubleClickColor}
+                    />
+                </div>
+                <div>
+                    <ColorGrid bind:color onClick={set_color} />
+                </div>
+                <!-- <div>
+                    <ColorGrid bind:color onClick={set_color} axis={AXIS.Z} />
+                </div> -->
             </div>
-            <div>
-                <ColorGrid bind:color onClick={set_color} />
-            </div>
-            <div>
-                <ColorGrid bind:color onClick={set_color} axis={AXIS.Z} />
-            </div>
-        </div>
-    </Center>
+        </Center>
+    </div>
     <!-- {/await} -->
 </div>
 

@@ -69,6 +69,7 @@
                     color={color.color}
                     selected={color.selected}
                     onClick={(c) => onClick?.(c, color.selected)}
+                    onDoubleClick={(c) => onClick?.(c, true)}
                 />
             </div>
         {/each}

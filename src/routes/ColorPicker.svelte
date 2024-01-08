@@ -3,11 +3,15 @@
     import { ColorSpace } from '$lib/element/space';
     import { createEventDispatcher } from 'svelte';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
+    import type { CursorSpec } from '$lib/element/cursor';
+    import { Color } from '$lib/color';
 
     // const dispatch = createEventDispatcher<Vec3>();
     export let color = vec3(1, 1, 1);
     export let saved_color = vec3(1, 1, 1);
     export let slice = 1;
+    export let cursors: CursorSpec[] = [];
+    export let onClick: undefined | ((c: Color) => void) = undefined;
     let canvas: HTMLCanvasElement;
     let colorspace: ColorSpace;
 
@@ -22,26 +26,21 @@
 
             onChange: ({ color: c, saved_color: s }) => {
                 color = c;
-                saved_color = s ?? c;
+                if (s) {
+                    saved_color = s;
+                    onClick?.(new Color('hsv', s));
+                }
             }
         });
         render();
     };
 
     const render = () => {
-        colorspace?.render([
-            {
-                pos: color
-            },
-            {
-                pos: saved_color
-            }
-        ]);
+        colorspace?.render(cursors);
         requestAnimationFrame(render);
     };
 
     export const set_color = (color: Vec3, saved_color: Vec3) => {
-        // console.log('SET');
         colorspace?.set({ color, saved_color });
     };
 

@@ -6,9 +6,15 @@ export interface Embedding {
     invert?: (pos: THREE.Vector3) => THREE.Vector3;
 }
 
+export interface CPUEmbedding extends Embedding {
+    embed: (pos: THREE.Vector3) => THREE.Vector3;
+}
+
 export interface InvertibleEmbedding extends Embedding {
     invert: (pos: THREE.Vector3) => THREE.Vector3;
 }
+
+export type CompleteEmbedding = CPUEmbedding & InvertibleEmbedding;
 
 export const rgb_shader = 'fragColor.xyz = fragColor.xyz;';
 export const hsv_shader = 'fragColor.xyz = hsv2rgb(fragColor.xzy);';
@@ -46,7 +52,7 @@ export function cartestianToCylindrical(pos: THREE.Vector3) {
     return new THREE.Vector3(theta, y, r);
 }
 
-export const cylindrical: InvertibleEmbedding = {
+export const cylindrical: CompleteEmbedding = {
     shader: cylindrical_shader,
     embed: cylindricalToCartesian,
     invert: cartestianToCylindrical
