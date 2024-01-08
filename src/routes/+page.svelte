@@ -16,6 +16,7 @@
     import { Color } from '$lib/color';
     import History from './History.svelte';
     import type { CursorSpec } from '$lib/element/cursor';
+    import TextPreviewGroup from './TextPreviewGroup.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
     let space_clicked_color = vec3(0.5, 1, 1);
@@ -52,11 +53,14 @@
     ];
 </script>
 
-<div id="main" class="flex flex-col justify-stretch">
+<div id="main" class="flex flex-col gap-4 justify-stretch">
     <!-- {#await wasm}
         Loading
     {:then _} -->
     <History bind:this={history} bind:colors={history_colors} onClick={set_color} />
+    <div class="px-4">
+        <TextPreviewGroup color={selected_color} />
+    </div>
     <div class="grow">
         <Center>
             <div class="flex gap-8 flex-wrap">

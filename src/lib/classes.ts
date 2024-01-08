@@ -51,6 +51,7 @@ const sx_mapper = (k: string, v: val) => {
 
 export const sx = (obj: Record<string, val>) =>
     Object.entries(obj)
+        .filter(([_, v]) => v !== undefined)
         .map(([k, v]) => sx_mapper(k, v))
         .join('; ');
 

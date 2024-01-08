@@ -17,9 +17,6 @@ export interface Space extends ColorElement {
     color_embedding: Embedding;
     input_pos: THREE.Vector3;
     slice: number;
-
-    on_input_change(pos: THREE.Vector3, me?: boolean): void;
-    set_slice(slice: number): void;
 }
 
 class ColorSpaceCube {
@@ -109,7 +106,7 @@ export class ColorSpace {
 
     select_position?: Vec2;
 
-    onChange?: (color: ColorState) => void;
+    onChange?: (state: ColorState) => void;
 
     constructor({
         color,
@@ -211,7 +208,7 @@ export class ColorSpace {
         });
     }
 
-    set({ color, saved_color }: { color: Vec3; saved_color?: Vec3 }) {
+    set({ color, saved_color, me = false }: { color: Vec3; saved_color?: Vec3, me?: boolean }) {
         if (near(color, this.color)) {
             return;
         }
@@ -219,7 +216,9 @@ export class ColorSpace {
             this.saved_color.copy(saved_color);
         }
         this.color = color.clone();
-        this.cube.set(color);
+        if (!me) {
+            this.cube.set(color);
+        }
     }
 
     render(cursors?: CursorSpec[]) {
@@ -246,9 +245,9 @@ export class ColorSpace {
         const mouse = this.mouse_position(e);
         const picked = this.pick(mouse.x, mouse.y);
         if (picked) {
-            this.set({ color: picked });
+            this.set({ color: picked, me: true });
         } else {
-            this.set({ color: this.saved_color });
+            this.set({ color: this.saved_color, me: true });
         }
         const mouseDown = e.buttons === 1;
         if (this.select_position && !mouseDown && near2(this.select_position, mouse, 1)) {
