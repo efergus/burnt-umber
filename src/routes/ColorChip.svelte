@@ -14,7 +14,7 @@
 </script>
 
 <button
-    class="w-full h-full min-h-chip min-w-chip border-2 hover:!border-white"
+    class="w-full h-full min-h-chip min-w-chip border-box border-chip hover:!border-white"
     style={sx({
         bg: css,
         border_color: selected ? 'black' : css

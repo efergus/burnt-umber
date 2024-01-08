@@ -9,6 +9,9 @@ export default {
             minHeight: {
                 'chip': '4rem'
             },
+            borderWidth: {
+                'chip': '2px',
+            }
         }
     },
     plugins: []

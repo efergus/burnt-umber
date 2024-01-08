@@ -6,6 +6,7 @@
 
     export let colors: Color[] = [];
     export let onClick: undefined | ((c: Color) => void) = undefined;
+
     function push(c: Color) {
         colors.push(c);
         colors = colors;
@@ -23,7 +24,12 @@
     };
 </script>
 
-<div class="flex min-h-chip gap-1 bg-slate-100">
+<div
+    class="grid min-h-chip gap-1 bg-slate-100 overflow-x-auto"
+    style={sx({
+        columns: 'repeat( auto-fill, minmax(64px, 1fr))'
+    })}
+>
     {#each colors as color, index}
         <div>
             <ColorChip {color} selected={index === colors.length - 1} {onClick} />
