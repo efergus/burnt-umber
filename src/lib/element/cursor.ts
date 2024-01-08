@@ -34,20 +34,21 @@ export class Cursor {
 interface SetCursorsOptions {
     fallback: Vec3,
     scene: THREE.Scene,
+    size?: number,
     embedding?: (i: Vec3) => Vec3,
     specs?: CursorSpec[],
 }
 
-export function setCursors(cursors: Cursor[], { fallback, embedding, scene, specs }: SetCursorsOptions) {
+export function setCursors(cursors: Cursor[], { fallback, embedding, scene, size, specs }: SetCursorsOptions) {
     if (specs) {
         for (let i = 0; i < specs.length; i++) {
             if (!cursors[i]) {
-                cursors.push(new Cursor(scene));
+                cursors.push(new Cursor(scene, size ?? 1));
             }
             const pos = specs[i].pos;
             const position = embedding?.(pos) ?? pos;
             cursors[i].mesh.position.copy(position);
-            cursors[i].mesh.scale.setScalar(specs[i].size ?? 1);
+            cursors[i].mesh.scale.setScalar((specs[i].size ?? 1) * (size ?? 1));
             cursors[i].mesh.visible = true;
         }
         for (let i = specs.length; i < cursors.length; i++) {

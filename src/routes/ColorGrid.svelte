@@ -69,6 +69,10 @@
                     color={color.color}
                     selected={color.selected}
                     onClick={(c) => onClick?.(c, color.selected)}
+                    onDoubleClick={(c) => {
+                        console.log('dbclick');
+                        onClick?.(c, true);
+                    }}
                 />
             </div>
         {/each}

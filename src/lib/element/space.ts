@@ -1,9 +1,10 @@
-import { near, vec3, type Mat4, type Vec3 } from '$lib/geometry/vec';
+import { near, vec3, type Mat4, type Vec3, type Vec2, vec2, near2 } from '$lib/geometry/vec';
 import { definitions, frag, vert } from '$lib/shaders';
 import {
     pick_shader,
     type Embedding,
     embed_shader,
+    type CPUEmbedding,
 } from '$lib/shaders/embed';
 import * as THREE from 'three';
 import { cameraController, type CameraController } from './controller';
@@ -85,7 +86,7 @@ type WithoutMethods<T> = {
 export interface ColorSpaceParams {
     canvas: HTMLCanvasElement;
     color: Vec3;
-    space_embedding: Embedding;
+    space_embedding: CPUEmbedding;
     color_embedding: Embedding;
     slice: number;
 
@@ -105,6 +106,8 @@ export class ColorSpace {
 
     cube: ColorSpaceCube;
     cursors: Cursor[];
+
+    select_position?: Vec2;
 
     onChange?: (color: ColorState) => void;
 
@@ -143,6 +146,12 @@ export class ColorSpace {
         canvas.addEventListener('mousedown', (e) => {
             this.mouse_select(e);
         });
+        canvas.addEventListener('mouseup', (e) => {
+            this.mouse_select(e);
+        });
+        canvas.addEventListener('mouseleave', (e) => {
+            this.mouse_select(e);
+        })
         canvas.addEventListener(
             'wheel',
             (e) => {
@@ -217,7 +226,7 @@ export class ColorSpace {
         setCursors(this.cursors, {
             fallback: this.color,
             scene: this.screenScene,
-            embedding: this.cube.space_embedding.embed!,
+            embedding: this.cube.space_embedding.embed,
             specs: cursors,
         })
         const renderer = this.renderer;
@@ -230,27 +239,38 @@ export class ColorSpace {
         const rect = this.canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = rect.bottom - e.clientY;
-        return { x, y };
+        return vec2(x, y);
     }
 
     mouse_select(e: MouseEvent) {
-        const { x, y } = this.mouse_position(e);
-        const picked = this.pick(x, y);
+        const mouse = this.mouse_position(e);
+        const picked = this.pick(mouse.x, mouse.y);
         if (picked) {
             this.set({ color: picked });
         } else {
             this.set({ color: this.saved_color });
         }
-        const selecting = e.buttons === 1;
-        this.onChange?.({
-            color: this.color,
-            saved_color: selecting ? this.color : this.saved_color,
-        });
-        if (selecting) {
+        const mouseDown = e.buttons === 1;
+        if (this.select_position && !mouseDown && near2(this.select_position, mouse, 1)) {
+            this.onChange?.({
+                color: this.color,
+                saved_color: this.color,
+            });
             if (picked) {
                 this.saved_color = picked.clone();
             }
+        }
+        if (mouseDown) {
             this.cameraController.on_move(vec3(e.movementX, e.movementY, 0.0));
+            if (!this.select_position) {
+                this.select_position = mouse;
+            }
+        }
+        else {
+            this.onChange?.({
+                color: this.color,
+            });
+            this.select_position = undefined;
         }
     }
 

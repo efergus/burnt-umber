@@ -15,11 +15,14 @@
     import { cx } from '$lib/classes';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
     import { createEventDispatcher } from 'svelte';
+    import type { CursorSpec } from '$lib/element/cursor';
+    import { Color } from '$lib/color';
 
-    const dispatch = createEventDispatcher();
     export let axis: AXIS;
     export let color = vec3(0.5, 1, 1);
     export let saved_color = vec3(0.5, 1, 1);
+    export let cursors: CursorSpec[] = [];
+    export let onClick: undefined | ((c: Color) => void) = undefined;
     let canvas: HTMLCanvasElement;
     let axisElement: Axis;
 
@@ -30,6 +33,7 @@
             color = c;
             if (s) {
                 saved_color = s;
+                onClick?.(new Color('hsv', s));
             }
         });
         axisElement.on_input_change(new THREE.Vector3(...color));
@@ -42,16 +46,7 @@
             last_time = now;
             requestAnimationFrame(animate);
 
-            axisElement.render([
-                {
-                    pos: color,
-                    size: 0.2
-                },
-                {
-                    pos: saved_color,
-                    size: 0.3
-                }
-            ]);
+            axisElement.render(cursors);
         };
         canvas.onmousemove = (e) => {
             axisElement.mouse_select(e);
