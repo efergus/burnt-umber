@@ -17,6 +17,7 @@
     import History from './History.svelte';
     import type { CursorSpec } from '$lib/element/cursor';
     import TextPreviewGroup from './TextPreviewGroup.svelte';
+    import TextPreview from './TextPreview.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
     let space_clicked_color = vec3(0.5, 1, 1);
@@ -65,7 +66,7 @@
         onClick={set_color}
     />
     <div class="px-8">
-        <TextPreviewGroup color={selected_color} />
+        <TextPreview color={selected_color} />
     </div>
     <div class="grow">
         <Center>
