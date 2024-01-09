@@ -8,9 +8,6 @@
     export let text = false;
     export let white = false;
 
-    // style={sx({
-    //     columns: 'repeat( auto-fill, minmax(64px, 1fr))'
-    // })}
     $: color_string = color.functional();
     $: rgb_string = color.to('srgb').toString({ precision: 2 });
     $: color_css = color.to_css();

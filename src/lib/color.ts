@@ -31,7 +31,7 @@ const cfvs: Record<string, CFV> = {
 
 type Space = keyof typeof cfvs;
 
-type VFC = (color: Color) => Vec3;
+type VFC = (color: ColorJS) => Vec3;
 
 const vec_from_srgb: VFC = (color) => {
     return vec3(color.srgb.r, color.srgb.g, color.srgb.b)
@@ -52,6 +52,12 @@ export class Color extends ColorJS {
     constructor(space: Space, value: Vec3) {
         super(space, cfvs[space](value));
         this.input = value.clone()
+    }
+
+    static fromString(str: string) {
+        const color = new ColorJS(str);
+        const value = vfcs[color.spaceId](color);
+        return new Color(color.spaceId, value);
     }
 
     clone(): this {
