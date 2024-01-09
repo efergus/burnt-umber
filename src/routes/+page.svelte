@@ -53,12 +53,12 @@
     ];
 </script>
 
-<div id="main" class="flex flex-col gap-4 justify-stretch">
+<div id="main" class="flex flex-col gap-4 justify-stretch relative">
     <!-- {#await wasm}
         Loading
     {:then _} -->
     <History bind:this={history} bind:colors={history_colors} onClick={set_color} />
-    <div class="px-4">
+    <div class="px-8">
         <TextPreviewGroup color={selected_color} />
     </div>
     <div class="grow">

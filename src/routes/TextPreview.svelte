@@ -12,7 +12,7 @@
     //     columns: 'repeat( auto-fill, minmax(64px, 1fr))'
     // })}
     $: color_string = color.functional();
-    $: rgb_string = color.toString({ format: 'rgb', precision: 2 });
+    $: rgb_string = color.to('srgb').toString({ precision: 2 });
     $: color_css = color.to_css();
     $: style = sx(
         text
@@ -35,6 +35,9 @@
     class="border-chip border-gray-200 box-sizing p-4 rounded-lg"
     {style}
     on:click={() => {
+        if (window.getSelection()?.toString().trim()) {
+            return; // Do not toggle if the user highlighted text
+        }
         white = !white;
     }}
     on:keypress={() => {
@@ -45,7 +48,7 @@
 >
     <h2>Color:</h2>
     <p>{color_string}</p>
-    <h2>rgb:</h2>
+    <h2>RGB:</h2>
     <p>{rgb_string}</p>
     {#if rgb_string !== color_css}
         <h2>CSS:</h2>

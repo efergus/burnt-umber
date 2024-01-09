@@ -3,7 +3,7 @@ import ColorJS from 'colorjs.io';
 import { wrapAxis, type Vec3, clampVec3, vec3 } from './geometry/vec';
 import { AXIS } from './element/axis';
 
-ColorJS.defaults.precision = 3;
+// ColorJS.defaults.precision = 3;
 
 type CFV = (color: Vec3) => [
     number, number, number
@@ -78,7 +78,7 @@ export class Color extends ColorJS {
     }
 
     functional(): string {
-        const coords = this.getAll(this.spaceId).map(Math.round);
+        const coords = this.get_norm().toArray().map(x => Math.round(x * 100) / 100);
         return `${this.spaceId}(${coords.join(', ')})`
     }
 
