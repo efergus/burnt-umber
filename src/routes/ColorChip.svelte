@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { sx } from '$lib/classes';
+    import { cx, sx } from '$lib/classes';
     import { Color } from '$lib/color';
     import { vec3, type Vec3 } from '$lib/geometry/vec';
 
@@ -7,6 +7,7 @@
     export let color = new Color('srgb', vec3(1, 1, 1));
     export let onClick: undefined | ((c: Color) => void) = undefined;
     export let onDoubleClick: undefined | ((c: Color) => void) = undefined;
+    export let rounded = false;
 
     let clicked_color: undefined | Color = undefined;
 
@@ -14,7 +15,10 @@
 </script>
 
 <button
-    class="w-full h-full min-h-chip min-w-chip border-box border-chip hover:!border-white"
+    class={cx(
+        'relative w-full h-full min-h-chip min-w-chip border-box border-chip hover:!border-white peer-hover:!border-white',
+        rounded && 'rounded'
+    )}
     style={sx({
         bg: css,
         border_color: selected ? 'black' : css
@@ -29,7 +33,5 @@
         onClick?.(color);
     }}
 >
-    <div class="absolute">
-        <!-- {color.toString({ precision: 2 })} -->
-    </div>
+    <slot />
 </button>
