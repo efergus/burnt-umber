@@ -28,7 +28,6 @@
             'selected_colors',
             JSON.stringify(colors.map((c) => c.toString()))
         );
-        console.log(value);
     }
     function push(c: Color) {
         colors.push(c);
