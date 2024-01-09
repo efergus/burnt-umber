@@ -43,9 +43,6 @@
     $: selected_color = intoHsvColor(color);
     $: set_color(selected_color, false);
     $: cursors = [
-        {
-            pos: saved_color
-        },
         ...history_colors.map<CursorSpec>((c, i) => ({
             pos: c.get_norm(),
             size: ((i + 1) / history_colors.length) * 0.95 + 0.05

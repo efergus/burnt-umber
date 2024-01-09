@@ -76,15 +76,18 @@
                 <CopyButton value={color.to_hex()} />
                 <h2>Color:</h2>
             </div>
-            <p>{color_string}</p>
+            <div class="flex gap-2 justify-between group">
+                <p>{color_string}</p>
+                <CopyButton value={color_string} peek />
+            </div>
         </div>
         <ColorTextInput space="sRGB" {color} {onChange} />
         {#if rgb_string !== color_css}
             <div>
                 <h2>CSS:</h2>
-                <div class="flex gap-2">
-                    <!-- <CopyButton value={color_css} /> -->
+                <div class="flex gap-2 justify-between group">
                     <p>{color_css}</p>
+                    <CopyButton value={color_css} peek />
                 </div>
             </div>
         {/if}
