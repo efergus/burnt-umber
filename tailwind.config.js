@@ -11,6 +11,9 @@ export default {
             },
             borderWidth: {
                 'chip': '2px',
+            },
+            strokeWidth: {
+                '3': '3px',
             }
         }
     },

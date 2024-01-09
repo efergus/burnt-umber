@@ -46,10 +46,15 @@ const vfcs: Record<Space, VFC> = {
     'hsv': vec_from_hsv,
 }
 
+type ReadableStringParams = {
+    space?: string, precision?: number
+}
+
 export class Color extends ColorJS {
     input: Vec3;
 
     constructor(space: Space, value: Vec3) {
+        space = space.toLowerCase();
         super(space, cfvs[space](value));
         this.input = value.clone()
     }
@@ -75,12 +80,16 @@ export class Color extends ColorJS {
         this.setAll(this.space, cfvs[this.spaceId](value))
     }
 
-    get_norm() {
-        return vfcs[this.spaceId](this);
+    get_norm(space?: Space) {
+        return vfcs[space ?? this.spaceId](this);
     }
 
     to_css(): string {
-        return super.display().toString()
+        return super.display({ precision: 3 }).toString()
+    }
+
+    to_hex(): string {
+        return this.to('srgb').toString({ format: "hex" })
     }
 
     functional(): string {
@@ -99,5 +108,13 @@ export class Color extends ColorJS {
 
     near(c: Color, eps = 1e-6, space = "jzazbz"): boolean {
         return this.distance(c, space) < eps;
+    }
+
+    toReadableString(options: ReadableStringParams = {}): string {
+        const { space = "srgb", precision = 2 } = options;
+        if (space === "hex") {
+            return this.to("srgb").toString({ format: "hex", precision })
+        }
+        return this.to(space).toString({ precision })
     }
 }

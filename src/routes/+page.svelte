@@ -16,7 +16,7 @@
     import { Color } from '$lib/color';
     import History from './History.svelte';
     import type { CursorSpec } from '$lib/element/cursor';
-    import TextPreviewGroup from './TextPreviewGroup.svelte';
+    import TextPreview from './TextPreview.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
     let space_clicked_color = vec3(0.5, 1, 1);
@@ -24,7 +24,7 @@
     let history_colors: Color[] = [];
 
     function set_color(c: Color, save = true) {
-        color = c.get_norm();
+        color = c.get_norm('hsv');
         history?.select(c, save);
         if (save) {
             saved_color = c.get_norm();
@@ -43,9 +43,6 @@
     $: selected_color = intoHsvColor(color);
     $: set_color(selected_color, false);
     $: cursors = [
-        {
-            pos: saved_color
-        },
         ...history_colors.map<CursorSpec>((c, i) => ({
             pos: c.get_norm(),
             size: ((i + 1) / history_colors.length) * 0.95 + 0.05
@@ -53,7 +50,7 @@
     ];
 </script>
 
-<div id="main" class="flex flex-col gap-4 justify-stretch relative">
+<div id="main" class="flex flex-col gap-4 justify-stretch relative stroke-2">
     <!-- {#await wasm}
         Loading
     {:then _} -->
@@ -65,7 +62,7 @@
         onClick={set_color}
     />
     <div class="px-8">
-        <TextPreviewGroup color={selected_color} />
+        <TextPreview color={selected_color} onChange={(c) => set_color(c, true)} />
     </div>
     <div class="grow">
         <Center>
