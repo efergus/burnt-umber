@@ -90,8 +90,8 @@
         {/if}
     </div>
     {#if detail}
-        <ColorTextInput {color} space={'hex'} />
-        <ColorTextInput {color} space={'OKLab'} />
+        <ColorTextInput {color} space={'hex'} {onChange} />
+        <ColorTextInput {color} space={'OKLab'} {onChange} />
     {/if}
 </div>
 

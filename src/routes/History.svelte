@@ -5,6 +5,7 @@
     import ColorChip from './ColorChip.svelte';
     import XIcon from '$lib/assets/x.svelte';
     import CloseButton from './CloseButton.svelte';
+    import CopyButton from './CopyButton.svelte';
 
     export let color: Vec3;
     export let saved_color: Vec3;
@@ -64,6 +65,11 @@
             <ColorChip rounded {color} selected={index === colors.length - 1} {onClick}>
                 <div class="group relative w-full h-full overflow-hidden">
                     <CloseButton on:click={() => remove(index)} />
+                    <div
+                        class="absolute top-0 left-0 pl-0.5 group-hover:translate-x-0 -translate-x-full transition-all duration-75 hover:stroke-3"
+                    >
+                        <CopyButton value={color.to_hex()} size={16} />
+                    </div>
                 </div>
             </ColorChip>
         {/each}

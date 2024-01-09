@@ -4,6 +4,7 @@
 
     export let value = '';
     export let timeout = 1000;
+    export let size = 24;
 
     let text: HTMLElement;
     let width = 0;
@@ -29,5 +30,5 @@
             </div>
         </div>
     </div>
-    <CopyIcon /></button
+    <CopyIcon {size} /></button
 >
