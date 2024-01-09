@@ -57,7 +57,13 @@
     <!-- {#await wasm}
         Loading
     {:then _} -->
-    <History bind:this={history} bind:colors={history_colors} onClick={set_color} />
+    <History
+        bind:this={history}
+        bind:color
+        bind:saved_color
+        bind:colors={history_colors}
+        onClick={set_color}
+    />
     <div class="px-8">
         <TextPreviewGroup color={selected_color} />
     </div>

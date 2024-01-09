@@ -1,21 +1,44 @@
 <script lang="ts">
     import { sx } from '$lib/classes';
-    import type { Color } from '$lib/color';
-    import { vec3 } from '$lib/geometry/vec';
+    import { Color } from '$lib/color';
+    import type { Vec3 } from '$lib/geometry/vec';
     import ColorChip from './ColorChip.svelte';
     import XIcon from '$lib/assets/x.svelte';
     import CloseButton from './CloseButton.svelte';
 
-    export let colors: Color[] = [];
+    export let color: Vec3;
+    export let saved_color: Vec3;
+    export let colors: Color[];
+
     export let onClick: undefined | ((c: Color) => void) = undefined;
 
+    if (typeof window !== 'undefined') {
+        colors = JSON.parse(window.localStorage?.getItem('selected_colors') ?? '[]').map(
+            (s: string) => Color.fromString(s)
+        );
+        if (colors.length) {
+            color = colors[colors.length - 1].get_norm();
+            saved_color = color.clone();
+        }
+    }
+
+    function update_selected_colors() {
+        const value = JSON.stringify(colors.map((c) => c.toString()));
+        window.localStorage.setItem(
+            'selected_colors',
+            JSON.stringify(colors.map((c) => c.toString()))
+        );
+        console.log(value);
+    }
     function push(c: Color) {
         colors.push(c);
         colors = colors;
+        update_selected_colors();
     }
     function remove(i: number) {
         colors.splice(i, 1);
         colors = colors;
+        update_selected_colors();
     }
     export const select = (c: Color, save = true) => {
         const l = colors.length;
@@ -27,6 +50,7 @@
             return push(c);
         }
         colors[l - 1] = c;
+        update_selected_colors();
     };
 </script>
 
