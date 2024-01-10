@@ -17,6 +17,7 @@
     import History from './History.svelte';
     import type { CursorSpec } from '$lib/element/cursor';
     import TextPreview from './TextPreview.svelte';
+    import ColorBunch from './ColorBunch.svelte';
     let color = vec3(0.5, 1, 1);
     let saved_color = vec3(0.5, 1, 1);
     let space_clicked_color = vec3(0.5, 1, 1);
@@ -109,6 +110,7 @@
                 <!-- <div>
                     <ColorGrid bind:color onClick={set_color} axis={AXIS.Z} />
                 </div> -->
+                <ColorBunch colors={history_colors} />
             </div>
         </Center>
     </div>

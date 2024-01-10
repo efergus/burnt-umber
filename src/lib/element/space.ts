@@ -152,6 +152,7 @@ export class ColorSpace {
         canvas.addEventListener(
             'wheel',
             (e) => {
+                e.preventDefault();
                 const dy = e.deltaY / 10;
                 cameraController.on_move(new THREE.Vector3(0, 0, dy));
             },
