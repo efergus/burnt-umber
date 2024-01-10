@@ -21,6 +21,7 @@ export interface Axis extends ColorElement {
     color_embedding: Embedding;
     color: THREE.Vector3;
     saved_color: THREE.Vector3;
+    selecting: boolean;
 
     onChange?: (params: ColorState) => void;
     set(params: ColorState): void;
@@ -94,6 +95,7 @@ export class Axis {
             color: new THREE.Vector3(0, 0, 0),
             saved_color: new THREE.Vector3(0, 0, 0),
             color_embedding,
+            selecting: false,
             onChange,
             on_input_change(pos: THREE.Vector3) {
                 if (axis == AXIS.X) {
@@ -170,13 +172,15 @@ export class Axis {
                 const { x, y } = this.mouse_position(e);
                 const picked = this.pick(x, y);
                 const selecting = e.buttons === 1;
-                if (selecting) {
+                if (!selecting && this.selecting) {
                     this.set({ color: picked, saved_color: picked });
                     this.onChange?.({ color: picked, saved_color: picked.clone() });
+                    this.selecting = false;
                 }
                 else {
                     this.set({ color: picked });
                     this.onChange?.({ color: picked });
+                    this.selecting = selecting;
                 }
             },
             restore() {

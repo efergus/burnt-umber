@@ -23,6 +23,7 @@
     let space_clicked_color = vec3(0.5, 1, 1);
     let history: History;
     let history_colors: Color[] = [];
+    let slice_direction = 'horizontal';
 
     function set_color(c: Color, save = true) {
         color = c.get_norm('hsv');
@@ -44,6 +45,10 @@
     $: selected_color = intoHsvColor(color);
     $: set_color(selected_color, false);
     $: cursors = [
+        {
+            pos: saved_color,
+            size: 0.9
+        },
         ...history_colors.map<CursorSpec>((c, i) => ({
             pos: c.get_norm(),
             size: ((i + 1) / history_colors.length) * 0.95 + 0.05
@@ -77,7 +82,14 @@
                         grid_template_rows: '4rem 1fr 4rem'
                     })}
                 >
-                    <div />
+                    <button
+                        on:click={() => {
+                            slice_direction =
+                                slice_direction === 'horizontal' ? 'vertical' : 'horizontal';
+                        }}
+                    >
+                        btn
+                    </button>
                     <ColorAxis
                         bind:color
                         bind:saved_color
@@ -93,7 +105,13 @@
                         {cursors}
                         onClick={doubleClickColor}
                     />
-                    <ColorPicker bind:color bind:saved_color {cursors} onClick={doubleClickColor} />
+                    <ColorPicker
+                        bind:color
+                        bind:saved_color
+                        {cursors}
+                        onClick={doubleClickColor}
+                        {slice_direction}
+                    />
                     <Palette color={selected_color} onClick={set_color} />
                     <div />
                     <ColorAxis
@@ -107,10 +125,6 @@
                 <div>
                     <ColorGrid bind:color onClick={set_color} />
                 </div>
-                <!-- <div>
-                    <ColorGrid bind:color onClick={set_color} axis={AXIS.Z} />
-                </div> -->
-                <ColorBunch colors={history_colors} />
             </div>
         </Center>
     </div>

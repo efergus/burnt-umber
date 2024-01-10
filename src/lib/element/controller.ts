@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 
+const stick_thetas = [
+    0,
+    Math.PI / 2,
+]
+
 function spherical_to_cartesian(theta: number, phi: number, radius: number) {
     return new THREE.Vector3(
         radius * Math.cos(theta) * Math.cos(phi),
@@ -16,6 +21,7 @@ export interface CameraController {
     lookAt: THREE.Vector3;
 
     on_move(delta: THREE.Vector3): void;
+    update(): void;
 }
 
 export function cameraController(camera: THREE.PerspectiveCamera): CameraController {
@@ -25,24 +31,31 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
         phi: 0,
         radius: 3,
         lookAt: new THREE.Vector3(0, 1, 0),
+        latest: Date.now(),
 
         on_move(delta: THREE.Vector3) {
+            const now = Date.now();
+            const deltaT = (now - this.latest) / 1000;
+            this.latest = now;
             const new_theta = Math.max(
                 Math.min(this.theta + delta.y * 0.01, Math.PI * 1.5),
                 -Math.PI / 2
             );
-            const cross =
-                this.theta > Math.PI / 2 !== new_theta > Math.PI / 2 && this.theta !== Math.PI / 2;
+            let cross: number | undefined = undefined;
+            for (const stick of stick_thetas) {
+                if (this.theta > stick !== new_theta > stick) {
+                    cross = stick;
+                    break;
+                }
+            }
 
-            if (cross) {
-                this.stick += delta.y;
-                this.theta = Math.PI / 2;
-            } else if (this.stick !== 0) {
-                this.stick += delta.y;
+            if (cross !== undefined || this.stick !== 0) {
+                this.stick += delta.y - this.stick * deltaT;
+                this.theta = cross ?? this.theta;
             } else {
                 this.theta = new_theta;
             }
-            if (Math.abs(this.stick) >= 40) {
+            if (Math.abs(this.stick) >= 60) {
                 this.stick = 0;
                 this.theta = new_theta;
             }
@@ -50,6 +63,9 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             this.radius += delta.z * 0.04;
 
             this.radius = Math.max(this.radius, 0.1);
+        },
+
+        update() {
             const radius = this.radius + Math.cos(this.theta) ** 2 * 0.5;
 
             const position = spherical_to_cartesian(this.theta, this.phi, radius);

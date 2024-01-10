@@ -12,6 +12,7 @@
     export let slice = 1;
     export let cursors: CursorSpec[] = [];
     export let onClick: undefined | ((c: Color) => void) = undefined;
+    export let slice_direction = 'horizontal';
     let canvas: HTMLCanvasElement;
     let colorspace: ColorSpace;
 
@@ -23,6 +24,8 @@
             slice,
             space_embedding: cylindrical,
             color_embedding: hsv,
+
+            slice_direction,
 
             onChange: ({ color: c, saved_color: s }) => {
                 color = c;
@@ -46,6 +49,7 @@
 
     $: start(canvas);
     $: set_color(color, saved_color);
+    $: colorspace?.set_slice(slice_direction);
 </script>
 
 <div class="w-96 h-96">

@@ -106,7 +106,7 @@ export class Color extends ColorJS {
 
     is_dark(): boolean {
         // TODO: Make this better
-        return this.oklab.l < 0.75;
+        return this.oklab.l < 0.7;
     }
 
     to_vec(): Vec3 {
