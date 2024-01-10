@@ -54,7 +54,7 @@
     };
 </script>
 
-<div class="sticky top-0 bg-slate-100 px-8 py-2">
+<div class="sticky top-0 bg-slate-100 px-8 py-2 z-50">
     <div
         class="grid min-h-chip gap-2 overflow-x-auto"
         style={sx({

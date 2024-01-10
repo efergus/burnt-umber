@@ -9,11 +9,16 @@
     export let space = 'srgb';
     export let label = space;
     export let value = color.toReadableString({ space });
+    export let normalized = false;
 
     const id = uniqueId('color_');
     let input: HTMLInputElement;
 
     function update_from(color: Color) {
+        if (normalized) {
+            value = color.norm_string();
+            return;
+        }
         value = color.toReadableString({ space });
     }
     $: update_from(color);
@@ -33,12 +38,13 @@
                 try {
                     const c = Color.fromString(val);
                     onChange?.(c);
-                } catch {
+                } catch (e) {
+                    console.log(e);
                     return;
                 }
             }}
-            on:blur={(e) => {
-                value = color.toReadableString({ space });
+            on:blur={() => {
+                update_from(color);
             }}
         />
         <CopyButton {value} peek />

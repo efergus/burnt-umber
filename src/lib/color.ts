@@ -60,6 +60,13 @@ export class Color extends ColorJS {
     }
 
     static fromString(str: string) {
+        if (str.startsWith("hsv(")) {
+            const nums = str.match(/[\d-.]+/g)?.map(x => parseFloat(x) / 100);
+            if (nums?.length !== 3) {
+                throw new Error(`Parsing error ${str}`)
+            }
+            return new Color("hsv", vec3(...nums))
+        }
         const color = new ColorJS(str);
         const value = vfcs[color.spaceId](color);
         return new Color(color.spaceId, value);
@@ -92,8 +99,8 @@ export class Color extends ColorJS {
         return this.to('srgb').toString({ format: "hex" })
     }
 
-    functional(): string {
-        const coords = this.get_norm().toArray().map(x => Math.round(x * 100) / 100);
+    norm_string(): string {
+        const coords = this.get_norm().toArray().map(x => Math.round(x * 100) + "%");
         return `${this.spaceId}(${coords.join(', ')})`
     }
 
