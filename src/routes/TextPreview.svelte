@@ -17,7 +17,7 @@
 
     $: state = (Number(text) << 1) | Number(white);
 
-    $: color_string = color.functional();
+    $: color_string = color.norm_string();
     $: rgb_string = color.to('srgb').toString({ precision: 2 });
     $: color_css = color.to_css();
     $: style = sx({
@@ -72,14 +72,7 @@
     </button>
     <div class="grid">
         <div>
-            <div class="flex gap-2">
-                <CopyButton value={color.to_hex()} />
-                <h2>Color:</h2>
-            </div>
-            <div class="flex gap-2 justify-between group">
-                <p>{color_string}</p>
-                <CopyButton value={color_string} peek />
-            </div>
+            <ColorTextInput {color} label="Color:" {onChange} normalized />
         </div>
         <ColorTextInput space="sRGB" {color} {onChange} />
         {#if rgb_string !== color_css}
