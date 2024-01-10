@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { sx } from '$lib/classes';
+    import { cx, sx } from '$lib/classes';
     import { Color } from '$lib/color';
     import type { Vec3 } from '$lib/geometry/vec';
     import ColorChip from './ColorChip.svelte';
@@ -54,7 +54,7 @@
     };
 </script>
 
-<div class="sticky top-0 bg-slate-100 px-8 py-2 z-50">
+<div class="sticky top-0 bg-slate-100 px-8 z-50">
     <CloseButton
         positioning="top-2 -left-2"
         on:click={() => {
@@ -62,20 +62,31 @@
         }}
     />
     <div
-        class="grid min-h-chip gap-2 overflow-x-auto"
+        class="grid min-h-chip overflow-x-auto"
         style={sx({
-            columns: 'repeat( auto-fill, minmax(64px, 1fr))'
+            columns: 'repeat( auto-fill, minmax(6rem, 1fr))'
         })}
     >
         {#each colors as color, index}
-            <ColorChip rounded {color} selected={index === colors.length - 1} {onClick}>
-                <div class="group relative w-full h-full overflow-hidden">
+            <ColorChip
+                classes="first:rounded-l last:rounded-r"
+                {color}
+                selected={index === colors.length - 1}
+                {onClick}
+            >
+                <div
+                    class={cx(
+                        'group relative w-full h-full overflow-hidden flex flex-col justify-end items-start px-1',
+                        color.is_dark() && 'text-white'
+                    )}
+                >
                     <CloseButton on:click={() => remove(index)} />
                     <div
                         class="absolute top-0 left-0 pl-0.5 group-hover:translate-x-0 -translate-x-full transition-all duration-75 hover:stroke-3"
                     >
                         <CopyButton value={color.to_hex()} size={16} />
                     </div>
+                    {color.to_hex()}
                 </div>
             </ColorChip>
         {/each}

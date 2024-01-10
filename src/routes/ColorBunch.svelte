@@ -5,10 +5,10 @@
     export let colors: Color[] = [];
 </script>
 
-<div class="flex flex-col flex-wrap">
+<div class="flex flex-col flex-wrap min-w-[8.5ch] text-center">
     {#each colors as color}
         <p
-            class={cx('py-1 px-2 first:rounded-t last:rounded-b', color.is_dark() && 'text-white')}
+            class={cx('py-1 px-1 first:rounded-t last:rounded-b', color.is_dark() && 'text-white')}
             style={sx({
                 bg: color.to_css()
             })}

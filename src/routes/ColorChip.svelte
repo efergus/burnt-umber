@@ -8,6 +8,7 @@
     export let onClick: undefined | ((c: Color) => void) = undefined;
     export let onDoubleClick: undefined | ((c: Color) => void) = undefined;
     export let rounded = false;
+    export let classes = '';
 
     let clicked_color: undefined | Color = undefined;
 
@@ -17,7 +18,8 @@
 <button
     class={cx(
         'relative w-full h-full min-h-chip min-w-chip border-box border-chip hover:!border-white peer-hover:!border-white',
-        rounded && 'rounded'
+        rounded && 'rounded',
+        classes
     )}
     style={sx({
         bg: css,

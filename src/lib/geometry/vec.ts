@@ -63,3 +63,7 @@ export const unit = {
 };
 
 export const units = [unit.x, unit.y, unit.z];
+
+export function mat4() {
+    return new THREE.Matrix4();
+}

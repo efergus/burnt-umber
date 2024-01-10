@@ -1,4 +1,4 @@
-import { near, vec3, type Mat4, type Vec3, type Vec2, vec2, near2 } from '$lib/geometry/vec';
+import { near, vec3, type Mat4, type Vec3, type Vec2, vec2, near2, mat4, wrapAxis } from '$lib/geometry/vec';
 import { definitions, frag, vert } from '$lib/shaders';
 import {
     pick_shader,
@@ -9,8 +9,9 @@ import {
 import * as THREE from 'three';
 import { cameraController, type CameraController } from './controller';
 import type { ColorElement } from '.';
-import type { ColorState } from './axis';
+import { AXIS, type ColorState } from './axis';
 import { Cursor, setCursors, type CursorSpec } from './cursor';
+import { spring, type Spring } from '$lib/motion/spring';
 
 export interface Space extends ColorElement {
     space_embedding: Embedding;
@@ -66,10 +67,10 @@ class ColorSpaceCube {
         this.base_embedding_matrix = embedMatrix;
     }
 
-    set(input: Vec3) {
-        const embedMatrix = new THREE.Matrix4().makeScale(1, input.y, 1).multiply(
-            this.base_embedding_matrix
-        )
+    set(vertical_top: number, horizontal_start = 0, horizontal_size = 1) {
+        const scale = mat4().makeScale(horizontal_size, vertical_top, 1);
+        const trans = mat4().makeTranslation(vec3(horizontal_start, 0, 0))
+        const embedMatrix = scale.multiply(trans).multiply(this.base_embedding_matrix)
         this.mesh.material.uniforms.embedMatrix.value = embedMatrix;
         this.pick_mesh.material.uniforms.embedMatrix.value = embedMatrix;
     }
@@ -86,6 +87,7 @@ export interface ColorSpaceParams {
     space_embedding: CPUEmbedding;
     color_embedding: Embedding;
     slice: number;
+    slice_direction: string;
 
     onChange?: (state: ColorState) => void;
 }
@@ -105,6 +107,9 @@ export class ColorSpace {
     cursors: Cursor[];
 
     select_position?: Vec2;
+    slice_direction: string;
+
+    spring: Spring;
 
     onChange?: (state: ColorState) => void;
 
@@ -120,7 +125,9 @@ export class ColorSpace {
         pickTarget,
         cube,
         cursors,
-        onChange
+        slice_direction,
+        spring,
+        onChange,
     }: WithoutMethods<ColorSpace>) {
         this.canvas = canvas;
         this.color = color;
@@ -134,6 +141,9 @@ export class ColorSpace {
 
         this.cube = cube;
         this.cursors = cursors;
+
+        this.slice_direction = slice_direction;
+        this.spring = spring;
 
         this.onChange = onChange;
 
@@ -195,17 +205,27 @@ export class ColorSpace {
 
         const cursor = new Cursor(screenScene);
 
+        const controller = cameraController(camera);
+
         return new ColorSpace({
             ...params,
             saved_color: params.color,
             renderer,
             screenScene,
             camera: camera,
-            cameraController: cameraController(camera),
+            cameraController: controller,
             pickScene,
             pickTarget,
             cube,
             cursors: [cursor],
+            slice_direction: params.slice_direction,
+            spring: spring({
+                theta: controller.theta,
+                phi: controller.phi,
+                vertical_slice: 1,
+                horizontal_slice: 1,
+                slice_start: 0,
+            })
         });
     }
 
@@ -218,11 +238,43 @@ export class ColorSpace {
         }
         this.color = color.clone();
         if (!me) {
-            this.cube.set(color);
+            this.update_slice();
+        }
+    }
+
+    set_slice(slice_direction: string) {
+        this.slice_direction = slice_direction;
+        if (slice_direction === "vertical") {
+            this.spring.set("theta", 0);
+            this.spring.set("horizontal_slice", 1);
+            this.spring.set("vertical_slice", 0.5);
+        }
+        else {
+            this.spring.set("theta", Math.PI / 2);
+            this.spring.set("horizontal_slice", this.color.y);
+            this.spring.set("vertical_slice", 1);
+        }
+        this.update_slice();
+    }
+
+    update_slice(force = false) {
+        if (this.slice_direction === "horizontal") {
+            this.spring.set("horizontal_slice", this.color.y, force);
+        }
+        else if (this.slice_direction === "vertical") {
+            this.spring.set("horizontal_slice", 1, force);
+            this.spring.set("vertical_slice", 0.5, force);
+            this.spring.set("phi", (-this.color.x + 0.75) * Math.PI * 2, force);
         }
     }
 
     render(cursors?: CursorSpec[]) {
+        this.spring.update();
+        this.cameraController.phi = this.spring.get("phi");
+        this.cameraController.theta = this.spring.get("theta");
+        this.cube.set(this.spring.get("horizontal_slice"), -(this.cameraController.phi / Math.PI) - 0.5, this.spring.get("vertical_slice"))
+
+        this.cameraController.update();
         setCursors(this.cursors, {
             fallback: this.color,
             scene: this.screenScene,
@@ -265,6 +317,8 @@ export class ColorSpace {
             if (!this.select_position) {
                 this.select_position = mouse;
             }
+            this.spring.set("theta", this.cameraController.theta, true);
+            this.spring.set("phi", this.cameraController.phi, true);
         }
         else {
             this.onChange?.({
@@ -292,7 +346,7 @@ export class ColorSpace {
             return;
         }
 
-        const colorPosition = new THREE.Vector3(pixelBuffer[0], pixelBuffer[1], pixelBuffer[2]);
+        const colorPosition = wrapAxis(AXIS.X, vec3(pixelBuffer[0], pixelBuffer[1], pixelBuffer[2]));
         renderer.setRenderTarget(null);
         return colorPosition;
     }
