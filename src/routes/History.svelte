@@ -35,8 +35,8 @@
         colors = colors;
         update_selected_colors();
     }
-    function remove(i: number) {
-        colors.splice(i, 1);
+    function remove(i: number, count = 1) {
+        colors.splice(i, count);
         colors = colors;
         update_selected_colors();
     }
@@ -55,6 +55,12 @@
 </script>
 
 <div class="sticky top-0 bg-slate-100 px-8 py-2 z-50">
+    <CloseButton
+        positioning="top-2 -left-2"
+        on:click={() => {
+            remove(0, colors.length - 1);
+        }}
+    />
     <div
         class="grid min-h-chip gap-2 overflow-x-auto"
         style={sx({
