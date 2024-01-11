@@ -1,8 +1,21 @@
 import * as THREE from 'three';
 
-const stick_thetas = [
-    0,
-    Math.PI / 2,
+type CameraStop = {
+    angle: number,
+    threshold?: number,
+}
+
+const stick_thetas: CameraStop[] = [
+    {
+        angle: 0,
+    },
+    {
+        angle: Math.PI / 4,
+        threshold: 20,
+    },
+    {
+        angle: Math.PI / 2,
+    }
 ]
 
 function spherical_to_cartesian(theta: number, phi: number, radius: number) {
@@ -41,21 +54,23 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
                 Math.min(this.theta + delta.y * 0.01, Math.PI * 1.5),
                 -Math.PI / 2
             );
-            let cross: number | undefined = undefined;
+            let cross: CameraStop | undefined = undefined;
             for (const stick of stick_thetas) {
-                if (this.theta > stick !== new_theta > stick) {
+                const angle = stick.angle;
+                if (this.theta > angle !== new_theta > angle || this.theta === angle) {
                     cross = stick;
                     break;
                 }
             }
 
-            if (cross !== undefined || this.stick !== 0) {
-                this.stick += delta.y - this.stick * deltaT;
-                this.theta = cross ?? this.theta;
+            const vert = Math.max(Math.abs(delta.y) - Math.abs(delta.x), 0)
+            if (cross !== undefined) {
+                this.stick += vert - this.stick * deltaT;
+                this.theta = cross?.angle ?? this.theta;
             } else {
                 this.theta = new_theta;
             }
-            if (Math.abs(this.stick) >= 60) {
+            if (Math.abs(this.stick) >= (cross?.threshold ?? 50)) {
                 this.stick = 0;
                 this.theta = new_theta;
             }

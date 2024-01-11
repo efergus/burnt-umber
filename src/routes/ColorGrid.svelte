@@ -9,7 +9,7 @@
     export let axis: AXIS = AXIS.Y;
     export let steps = 7;
     export let scale_x = 0.1;
-    export let scale_y = 1;
+    export let scale_y = 0.5;
     export let onClick: undefined | ((c: Color, save?: boolean) => void) = undefined;
 
     let colors: { color: Color; selected: boolean }[] = [];

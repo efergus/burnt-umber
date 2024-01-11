@@ -50,6 +50,11 @@ type ReadableStringParams = {
     space?: string, precision?: number
 }
 
+const norm_order: Record<Space, AXIS[]> = {
+    'srgb': [AXIS.X, AXIS.Y, AXIS.Z],
+    'hsv': [AXIS.X, AXIS.Z, AXIS.Y],
+}
+
 export class Color extends ColorJS {
     input: Vec3;
 
@@ -65,7 +70,7 @@ export class Color extends ColorJS {
             if (nums?.length !== 3) {
                 throw new Error(`Parsing error ${str}`)
             }
-            return new Color("hsv", vec3(...nums))
+            return new Color("hsv", vec3(nums[0], nums[2], nums[1]))
         }
         const color = new ColorJS(str);
         const value = vfcs[color.spaceId](color);
@@ -100,8 +105,14 @@ export class Color extends ColorJS {
     }
 
     norm_string(): string {
-        const coords = this.get_norm().toArray().map(x => Math.round(x * 100) + "%");
-        return `${this.spaceId}(${coords.join(', ')})`
+        const coords = this.get_norm();
+        const reordered = coords.clone();
+        const ordering = norm_order[this.spaceId];
+        for (let i = 0; i < 3; i++) {
+            reordered.setComponent(i, coords.getComponent(ordering[i]));
+        }
+        const values = reordered.toArray().map(x => Math.round(x * 100) + "%");
+        return `${this.spaceId}(${values.join(', ')})`
     }
 
     is_dark(): boolean {

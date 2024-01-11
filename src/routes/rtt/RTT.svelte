@@ -1,4 +1,6 @@
 <script type="js">
+    // @ts-nocheck
+
     import vert_src from '$lib/shaders/rtt/vert.glsl?raw';
     import frag_src from '$lib/shaders/rtt/frag.glsl?raw';
     import frag_pass_1_src from '$lib/shaders/rtt/frag_pass_1.glsl?raw';
