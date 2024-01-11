@@ -5,7 +5,7 @@
     // import RustColorpicker from './RustColorpicker.svelte';
     // import init from '$lib/rust/rust';
     import ColorPicker from './ColorPicker.svelte';
-    import Rtt from './RTT.svelte';
+    import Rtt from './rtt/RTT.svelte';
     import ColorAxis from './ColorAxis.svelte';
     import { AXIS } from '$lib/element/axis';
     import ColorChip from './ColorChip.svelte';

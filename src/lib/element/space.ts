@@ -98,10 +98,12 @@ export class ColorSpace {
     saved_color: Vec3;
     renderer: THREE.WebGLRenderer;
     screenScene: THREE.Scene;
+    cursorScene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     cameraController: CameraController;
     pickScene: THREE.Scene;
     pickTarget: THREE.WebGLRenderTarget;
+    cursorTarget: THREE.WebGLRenderTarget;
 
     cube: ColorSpaceCube;
     cursors: Cursor[];
@@ -128,6 +130,8 @@ export class ColorSpace {
         slice_direction,
         spring,
         onChange,
+        cursorScene,
+        cursorTarget,
     }: WithoutMethods<ColorSpace>) {
         this.canvas = canvas;
         this.color = color;
@@ -144,6 +148,9 @@ export class ColorSpace {
 
         this.slice_direction = slice_direction;
         this.spring = spring;
+
+        this.cursorScene = cursorScene;
+        this.cursorTarget = cursorTarget;
 
         this.onChange = onChange;
 
@@ -194,7 +201,17 @@ export class ColorSpace {
         });
         pickTarget.texture.generateMipmaps = false;
 
+        // const colorTarget = new THREE.WebGLRenderTarget(rect.width, rect.height);
+        const cursorTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
+            format: THREE.RGBAFormat,
+        });
+
+        const plane_geometry = new THREE.PlaneGeometry();
+        const plane_material = new THREE.MeshBasicMaterial({ color: 0xffffff, map: cursorTarget.texture, transparent: true })
+        const plane = new THREE.Mesh(plane_geometry, plane_material);
+
         const screenScene = new THREE.Scene();
+        const cursorScene = new THREE.Scene();
         const pickScene = new THREE.Scene();
         const cube = new ColorSpaceCube(
             screenScene,
@@ -202,8 +219,9 @@ export class ColorSpace {
             params.space_embedding,
             params.color_embedding
         );
+        screenScene.add(plane);
 
-        const cursor = new Cursor(screenScene);
+        // const cursor = new Cursor(screenScene);
 
         const controller = cameraController(camera);
 
@@ -217,7 +235,7 @@ export class ColorSpace {
             pickScene,
             pickTarget,
             cube,
-            cursors: [cursor],
+            cursors: [],
             slice_direction: params.slice_direction,
             spring: spring({
                 theta: controller.theta,
@@ -225,7 +243,9 @@ export class ColorSpace {
                 vertical_slice: 1,
                 horizontal_slice: 1,
                 slice_start: 0,
-            })
+            }),
+            cursorScene,
+            cursorTarget,
         });
     }
 
@@ -282,6 +302,11 @@ export class ColorSpace {
             specs: cursors,
         })
         const renderer = this.renderer;
+
+        renderer.setRenderTarget(this.cursorTarget);
+        renderer.clear();
+        renderer.render(this.cursorScene, this.camera);
+
         renderer.setRenderTarget(null);
         renderer.clear();
         renderer.render(this.screenScene, this.camera);
