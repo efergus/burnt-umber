@@ -24,12 +24,14 @@
     let history: History;
     let history_colors: Color[] = [];
     let slice_direction = 'horizontal';
+    let showing_cursors = false;
 
     function set_color(c: Color, save = true) {
-        color = c.get_norm('hsv');
+        const norm = c.get_norm('hsv');
+        color = norm;
         history?.select(c, save);
         if (save) {
-            saved_color = c.get_norm();
+            saved_color = norm.clone();
         }
     }
 
@@ -49,10 +51,22 @@
             pos: saved_color,
             size: 0.9
         },
-        ...history_colors.map<CursorSpec>((c, i) => ({
-            pos: c.get_norm(),
-            size: ((i + 1) / history_colors.length) * 0.95 + 0.05
-        }))
+        ...(showing_cursors
+            ? history_colors.slice(0, -1).map<CursorSpec>((c, i) => {
+                  return {
+                      pos: c.get_norm(),
+                      size: 0.25,
+                      color: Color.fromString('black')
+                  };
+              })
+            : []),
+        ...history_colors.slice(-1).map<CursorSpec>((c) => {
+            return {
+                pos: c.get_norm(),
+                size: 1,
+                color: Color.fromString('black')
+            };
+        })
     ];
 </script>
 
@@ -121,9 +135,22 @@
                         {cursors}
                         onClick={doubleClickColor}
                     />
+                    <button
+                        on:click={() => {
+                            showing_cursors = !showing_cursors;
+                        }}
+                    >
+                        btn
+                    </button>
                 </div>
                 <div>
-                    <ColorGrid bind:color onClick={set_color} />
+                    <ColorGrid
+                        bind:color
+                        onClick={(c) => {
+                            set_color(c);
+                            saved_color = c.get_norm('hsv').clone();
+                        }}
+                    />
                 </div>
             </div>
         </Center>

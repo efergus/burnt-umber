@@ -70,12 +70,18 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             } else {
                 this.theta = new_theta;
             }
-            if (Math.abs(this.stick) >= (cross?.threshold ?? 50)) {
+            if (Math.abs(this.stick) >= (cross?.threshold ?? 40)) {
                 this.stick = 0;
                 this.theta = new_theta;
             }
             this.phi += delta.x * 0.01;
             this.radius += delta.z * 0.04;
+            if (this.phi > Math.PI) {
+                this.phi -= Math.PI * 2;
+            }
+            else if (this.phi < -Math.PI) {
+                this.phi += Math.PI * 2;
+            }
 
             this.radius = Math.max(this.radius, 0.1);
         },
