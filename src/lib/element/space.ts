@@ -98,12 +98,15 @@ export class ColorSpace {
     saved_color: Vec3;
     renderer: THREE.WebGLRenderer;
     screenScene: THREE.Scene;
+    screenCamera: THREE.OrthographicCamera;
     cursorScene: THREE.Scene;
+    colorScene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     cameraController: CameraController;
     pickScene: THREE.Scene;
     pickTarget: THREE.WebGLRenderTarget;
     cursorTarget: THREE.WebGLRenderTarget;
+    colorTarget: THREE.WebGLRenderTarget;
 
     cube: ColorSpaceCube;
     cursors: Cursor[];
@@ -121,7 +124,7 @@ export class ColorSpace {
         canvas,
         renderer,
         screenScene,
-        camera: screenCamera,
+        camera,
         cameraController,
         pickScene,
         pickTarget,
@@ -132,13 +135,17 @@ export class ColorSpace {
         onChange,
         cursorScene,
         cursorTarget,
+        colorTarget,
+        colorScene,
+        screenCamera,
     }: WithoutMethods<ColorSpace>) {
         this.canvas = canvas;
         this.color = color;
         this.saved_color = saved_color;
         this.renderer = renderer;
         this.screenScene = screenScene;
-        this.camera = screenCamera;
+        this.screenCamera = screenCamera;
+        this.camera = camera;
         this.cameraController = cameraController;
         this.pickScene = pickScene;
         this.pickTarget = pickTarget;
@@ -151,6 +158,8 @@ export class ColorSpace {
 
         this.cursorScene = cursorScene;
         this.cursorTarget = cursorTarget;
+        this.colorScene = colorScene;
+        this.colorTarget = colorTarget;
 
         this.onChange = onChange;
 
@@ -186,7 +195,7 @@ export class ColorSpace {
             alpha: true
         });
         renderer.setSize(rect.width, rect.height);
-        renderer.setPixelRatio(1);
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.autoClear = false;
 
         const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
@@ -197,31 +206,39 @@ export class ColorSpace {
         // TODO: do 1x1 and scissor?
         const pickTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
             format: THREE.RGBAFormat,
-            type: THREE.FloatType
+            type: THREE.FloatType,
+            generateMipmaps: false,
         });
-        pickTarget.texture.generateMipmaps = false;
 
-        // const colorTarget = new THREE.WebGLRenderTarget(rect.width, rect.height);
-        const cursorTarget = new THREE.WebGLRenderTarget(rect.width, rect.height, {
+        const colorTarget = new THREE.WebGLRenderTarget(rect.width * 2, rect.height * 2);
+        const cursorTarget = new THREE.WebGLRenderTarget(rect.width * 2, rect.height * 2, {
             format: THREE.RGBAFormat,
+            generateMipmaps: false,
         });
 
-        const plane_geometry = new THREE.PlaneGeometry();
-        const plane_material = new THREE.MeshBasicMaterial({ color: 0xffffff, map: cursorTarget.texture, transparent: true })
-        const plane = new THREE.Mesh(plane_geometry, plane_material);
+        const cursor_plane_geometry = new THREE.PlaneGeometry();
+        const cursor_plane_material = new THREE.MeshBasicMaterial({ color: 0xffffff, map: cursorTarget.texture, transparent: true })
+        const cursor_plane = new THREE.Mesh(cursor_plane_geometry, cursor_plane_material);
+        cursor_plane.position.z = 0.1;
+        cursor_plane.scale.copy(vec3(2, 2, 2))
+
+        const color_plane_geometry = new THREE.PlaneGeometry();
+        const color_plane_material = new THREE.MeshBasicMaterial({ color: 0xffffff, map: colorTarget.texture, transparent: true })
+        const color_plane = new THREE.Mesh(color_plane_geometry, color_plane_material);
+        color_plane.scale.copy(vec3(2, 2, 2))
 
         const screenScene = new THREE.Scene();
         const cursorScene = new THREE.Scene();
+        const colorScene = new THREE.Scene();
         const pickScene = new THREE.Scene();
         const cube = new ColorSpaceCube(
-            screenScene,
+            colorScene,
             pickScene,
             params.space_embedding,
             params.color_embedding
         );
-        screenScene.add(plane);
-
-        // const cursor = new Cursor(screenScene);
+        screenScene.add(cursor_plane);
+        screenScene.add(color_plane);
 
         const controller = cameraController(camera);
 
@@ -246,6 +263,9 @@ export class ColorSpace {
             }),
             cursorScene,
             cursorTarget,
+            colorScene,
+            colorTarget,
+            screenCamera: orthoCamera,
         });
     }
 
@@ -297,9 +317,26 @@ export class ColorSpace {
         this.cameraController.update();
         setCursors(this.cursors, {
             fallback: this.color,
-            scene: this.screenScene,
+            scene: this.cursorScene,
             embedding: this.cube.space_embedding.embed,
-            specs: cursors,
+            specs: cursors?.map((spec) => {
+                if (this.slice_direction === "horizontal") {
+                    const delta = Math.abs(this.color.y - spec.pos.y)
+                    return {
+                        ...spec,
+                        opacity: cursor_fade(delta)
+                    }
+                }
+                else {
+                    let delta = Math.abs(this.color.x - spec.pos.x)
+                    delta = Math.min(delta, Math.abs(delta - 0.5));
+                    return {
+                        ...spec,
+                        opacity: cursor_fade(delta)
+                    }
+                }
+                return spec;
+            }),
         })
         const renderer = this.renderer;
 
@@ -307,9 +344,13 @@ export class ColorSpace {
         renderer.clear();
         renderer.render(this.cursorScene, this.camera);
 
+        renderer.setRenderTarget(this.colorTarget);
+        renderer.clear();
+        renderer.render(this.colorScene, this.camera);
+
         renderer.setRenderTarget(null);
         renderer.clear();
-        renderer.render(this.screenScene, this.camera);
+        renderer.render(this.screenScene, this.screenCamera);
     }
 
     mouse_position(e: MouseEvent) {
@@ -375,4 +416,9 @@ export class ColorSpace {
         renderer.setRenderTarget(null);
         return colorPosition;
     }
+}
+
+
+function cursor_fade(delta: number) {
+    return Math.max(0.5 - (delta * 3) ** 3, Math.min(1.5 - delta * 40, 1), 0.1);
 }
