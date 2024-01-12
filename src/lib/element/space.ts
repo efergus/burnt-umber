@@ -1,9 +1,8 @@
-import { near, vec3, type Mat4, type Vec3, type Vec2, vec2, near2, mat4, wrapAxis } from '$lib/geometry/vec';
-import { definitions, frag, vert } from '$lib/shaders';
+import { near, vec3, type Mat4, type Vec3, type Vec2, vec2, near2, mat4, wrapAxis, zeros } from '$lib/geometry/vec';
+import { definitions, frag } from '$lib/shaders';
 import {
     pick_shader,
     type Embedding,
-    embed_shader,
     type CPUEmbedding,
 } from '$lib/shaders/embed';
 import * as THREE from 'three';
@@ -23,14 +22,14 @@ export interface Space extends ColorElement {
 class ColorSpaceCube {
     mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
     pick_mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
-    space_embedding: Embedding;
+    space_embedding: CPUEmbedding;
     color_embedding: Embedding;
     base_embedding_matrix: Mat4;
 
     constructor(
         scene: THREE.Scene,
         pickScene: THREE.Scene,
-        space_embedding: Embedding,
+        space_embedding: CPUEmbedding,
         color_embedding: Embedding
     ) {
         const geometry = new THREE.BoxGeometry(1, 1, 1, 64, 8, 8);
@@ -39,7 +38,7 @@ class ColorSpaceCube {
         embedMatrix.makeTranslation(boundingBox.min.multiplyScalar(-1));
 
         const material = new THREE.ShaderMaterial({
-            vertexShader: vert(embed_shader, space_embedding.shader),
+            vertexShader: space_embedding.shader,
             fragmentShader: definitions('USE_CLIP_PLANE') + frag(color_embedding.shader),
             uniforms: {
                 clipPlane: { value: new THREE.Vector4(0, 0, 1, 1.1) },
@@ -47,7 +46,7 @@ class ColorSpaceCube {
             }
         });
         const pick_material = new THREE.ShaderMaterial({
-            vertexShader: vert(embed_shader, space_embedding.shader),
+            vertexShader: space_embedding.shader,
             fragmentShader: definitions('USE_CLIP_PLANE') + frag(pick_shader),
             uniforms: {
                 clipPlane: { value: new THREE.Vector4(0, 0, 1, 1.1) },
@@ -59,6 +58,10 @@ class ColorSpaceCube {
         this.mesh = new THREE.Mesh(geometry, material);
         this.pick_mesh = new THREE.Mesh(geometry.clone(), pick_material);
 
+        const offset = space_embedding.center ?? zeros;
+        this.mesh.position.copy(offset);
+        this.pick_mesh.position.copy(offset);
+
         scene.add(this.mesh);
         pickScene.add(this.pick_mesh);
 
@@ -67,9 +70,10 @@ class ColorSpaceCube {
         this.base_embedding_matrix = embedMatrix;
     }
 
-    set(vertical_top: number, horizontal_start = 0, horizontal_size = 1) {
-        const scale = mat4().makeScale(horizontal_size, vertical_top, 1);
-        const trans = mat4().makeTranslation(vec3(horizontal_start, 0, 0))
+    scissor(start: Vec3, end: Vec3) {
+        const diff = end.clone().sub(start).toArray();
+        const scale = mat4().makeScale(...diff);
+        const trans = mat4().makeTranslation(start)
         const embedMatrix = scale.multiply(trans).multiply(this.base_embedding_matrix)
         this.mesh.material.uniforms.embedMatrix.value = embedMatrix;
         this.pick_mesh.material.uniforms.embedMatrix.value = embedMatrix;
@@ -186,6 +190,8 @@ export class ColorSpace {
                 passive: false
             }
         );
+
+        this.set_space_embedding(this.cube.space_embedding);
     }
     static new(params: ColorSpaceParams) {
         const rect = params.canvas.getBoundingClientRect();
@@ -297,6 +303,11 @@ export class ColorSpace {
         this.update_slice();
     }
 
+    set_space_embedding(embedding: CPUEmbedding) {
+        this.cube.space_embedding = embedding;
+        this.cameraController.look_at(embedding.center ?? zeros);
+    }
+
     update_slice(force = false) {
         if (this.slice_direction === "horizontal") {
             this.spring.set("horizontal_slice", this.color.y, force);
@@ -312,7 +323,15 @@ export class ColorSpace {
         this.spring.update();
         this.cameraController.phi = this.spring.get("phi");
         this.cameraController.theta = this.spring.get("theta");
-        this.cube.set(this.spring.get("horizontal_slice"), -(this.cameraController.phi / Math.PI) - 0.5, this.spring.get("vertical_slice"))
+        const start = vec3(
+            // -(this.cameraController.phi / Math.PI) - 0.5,
+            0,
+            0,
+            0
+        )
+        const end = start.clone()
+        end.add(vec3(this.spring.get("vertical_slice"), this.spring.get("horizontal_slice"), 1))
+        this.cube.scissor(start, end)
 
         this.cameraController.update();
         setCursors(this.cursors, {

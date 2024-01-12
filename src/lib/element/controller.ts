@@ -1,3 +1,4 @@
+import { vec3, type Vec3 } from '$lib/geometry/vec';
 import * as THREE from 'three';
 
 type CameraStop = {
@@ -32,8 +33,10 @@ export interface CameraController {
     phi: number;
     radius: number;
     lookAt: THREE.Vector3;
+    center: Vec3;
 
     on_move(delta: THREE.Vector3): void;
+    look_at(pos: Vec3): void;
     update(): void;
 }
 
@@ -45,8 +48,10 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
         radius: 3,
         lookAt: new THREE.Vector3(0, 1, 0),
         latest: Date.now(),
+        center: vec3(0, 0, 0),
 
         on_move(delta: THREE.Vector3) {
+            console.log(this.phi);
             const now = Date.now();
             const deltaT = (now - this.latest) / 1000;
             this.latest = now;
@@ -63,7 +68,7 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
                 }
             }
 
-            const vert = Math.max(Math.abs(delta.y) - Math.abs(delta.x), 0)
+            const vert = Math.max(Math.abs(delta.y) - Math.abs(delta.x) / 2, 0)
             if (cross !== undefined) {
                 this.stick += vert - this.stick * deltaT;
                 this.theta = cross?.angle ?? this.theta;
@@ -86,13 +91,18 @@ export function cameraController(camera: THREE.PerspectiveCamera): CameraControl
             this.radius = Math.max(this.radius, 0.1);
         },
 
+        look_at(pos: Vec3) {
+            this.center.copy(pos);
+        },
+
         update() {
             const radius = this.radius + Math.cos(this.theta) ** 2 * 0.5;
 
             const position = spherical_to_cartesian(this.theta, this.phi, radius);
             const up = spherical_to_cartesian(this.theta + Math.PI / 2, this.phi, 1);
             up.normalize();
-            this.lookAt.y = (Math.sin(this.theta) + 1) / 2;
+            this.lookAt.copy(this.center);
+            this.lookAt.y += Math.sin(this.theta) / 2;
             position.add(this.lookAt);
             camera.up.copy(up);
             camera.position.copy(position);

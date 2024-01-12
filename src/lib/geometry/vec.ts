@@ -47,7 +47,7 @@ export function near(a: Vec3, b: Vec3, eps = 1e-6): boolean {
 
 export function wrapAxis(axis: AXIS, vec: Vec3) {
     const component = vec.getComponent(axis);
-    return vec.clone().setComponent(axis, component - Math.floor(component));
+    return vec.clone().setComponent(axis, component > 1 ? component - Math.floor(component) : component);
 }
 export function clampVec3(vec: Vec3) {
     return vec3(clamp(vec.x), clamp(vec.y), clamp(vec.z));

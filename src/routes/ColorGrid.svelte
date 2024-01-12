@@ -104,4 +104,11 @@
             scale_x = value;
         }}
     />
+    <button
+        on:click={() => {
+            axis = (axis + 1) % 3;
+        }}
+    >
+        btn
+    </button>
 </div>

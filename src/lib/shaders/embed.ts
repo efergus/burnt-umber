@@ -1,9 +1,19 @@
+import { vec3, type Vec3 } from '$lib/geometry/vec';
 import * as THREE from 'three';
+import { vert } from '.';
+
+export enum EmbeddingName {
+    cylindrical,
+    cartesian,
+    hsv,
+}
 
 export interface Embedding {
+    name: EmbeddingName,
     shader: string;
     embed?: (pos: THREE.Vector3) => THREE.Vector3;
     invert?: (pos: THREE.Vector3) => THREE.Vector3;
+    center?: Vec3;
 }
 
 export interface CPUEmbedding extends Embedding {
@@ -32,6 +42,10 @@ export const inverse_cylindrical_shader = 'vertPosition = cartesianToCylindrical
 export const inverse_cylindrical_frag_shader =
     'fragColor.xyz = cartesianToCylindrical(fragColor.xyz);';
 
+export function identity<T = Vec3>(pos: T) {
+    return pos;
+}
+
 export function cylindricalToCartesian(pos: THREE.Vector3) {
     const theta = pos.x;
     const r = pos.z;
@@ -53,12 +67,23 @@ export function cartestianToCylindrical(pos: THREE.Vector3) {
 }
 
 export const cylindrical: CompleteEmbedding = {
-    shader: cylindrical_shader,
+    name: EmbeddingName.cylindrical,
+    shader: vert(embed_shader, cylindrical_shader),
     embed: cylindricalToCartesian,
-    invert: cartestianToCylindrical
+    invert: cartestianToCylindrical,
+    center: vec3(0, 0.5, 0),
 };
 
+export const cartesian: CompleteEmbedding = {
+    name: EmbeddingName.cartesian,
+    shader: vert(),
+    embed: identity,
+    invert: identity,
+    center: vec3(0.5, 0.5, 0.5),
+}
+
 export const hsv: Embedding = {
+    name: EmbeddingName.hsv,
     shader: hsv_shader
 };
 
